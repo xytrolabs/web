@@ -39,8 +39,7 @@ if (basePath && !basePath.startsWith("/")) {
 }
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  allowedDevOrigins: ["192.168.1.51"],
+  // output: "standalone",  // disabled — use next start for full API route support
   basePath: basePath || undefined,
   // esbuild ships native binaries + a README the bundler can't parse; load
   // it from node_modules at runtime instead of trying to bundle it. Used by
@@ -59,7 +58,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_GIT_COMMIT: gitCommitHash,
     NEXT_PUBLIC_APP_VERSION: appVersion,
     NEXT_PUBLIC_BASE_PATH: basePath,
-    NEXT_PUBLIC_DEV_MOCK_JMAP: process.env.DEV_MOCK_JMAP ?? "",
+  },
+  // Proxy JMAP calls to Stalwart — configure via JMAP_PROXY_TARGET env var
+  async rewrites() {
+    const target = process.env.JMAP_PROXY_TARGET || "http://127.0.0.1:8080";
+    return [
+      { source: "/.well-known/jmap", destination: `${target}/.well-known/jmap` },
+      { source: "/jmap/:path*", destination: `${target}/jmap/:path*` },
+    ];
   },
 };
 

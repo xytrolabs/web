@@ -1,16 +1,16 @@
 {
-  "name": "bulwark-webmail",
+  "name": "xytro-webmail",
   "version": "1.7.8",
-  "description": "Bulwark Webmail - a modern webmail client built for Stalwart Mail Server",
-  "author": "Bulwark Webmail <bulwark@rbm.systems>",
+  "description": "Xytro Webmail — AGPL-licensed webmail client built on Bulwark for Stalwart Mail Server",
+  "author": "Xytro Labs",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bulwarkmail/webmail.git"
+    "url": "git+https://github.com/xytrolabs/web.git"
   },
-  "homepage": "https://github.com/bulwarkmail/webmail",
+  "homepage": "https://github.com/xytrolabs/web",
   "bugs": {
-    "url": "https://github.com/bulwarkmail/webmail/issues"
+    "url": "https://github.com/xytrolabs/web/issues"
   },
   "keywords": [
     "jmap",

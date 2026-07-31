@@ -72,6 +72,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Proxy JMAP requests — configure via JMAP_PROXY_HOST env var
+  if (pathname === "/.well-known/jmap" || pathname.startsWith("/jmap/")) {
+    const url = new URL(request.url);
+    url.host = process.env.JMAP_PROXY_HOST || "localhost:4000";
+    return NextResponse.rewrite(url);
+  }
+
   const nonce = crypto.randomUUID();
   const isDev = process.env.NODE_ENV === "development";
   // The plugin-sandbox iframe document needs `'unsafe-eval'` to run plugin

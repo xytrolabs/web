@@ -25,7 +25,7 @@ import { configManager } from '@/lib/admin/config-manager';
 
 async function getDirectoryUrl(): Promise<string> {
   await configManager.ensureLoaded();
-  return configManager.get<string>('extensionDirectoryUrl') || 'https://extensions.bulwarkmail.org';
+  return configManager.get<string>('extensionDirectoryUrl') || '';
 }
 
 /**

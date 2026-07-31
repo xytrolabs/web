@@ -22,4 +22,5 @@ export interface VersionCheckStateFile {
   status: UpdateStatus | null;
 }
 
-export const DEFAULT_VERSION_ENDPOINT = 'https://version.telemetry.bulwarkmail.org/';
+// Disabled by default — configure a custom endpoint to enable version checks
+export const DEFAULT_VERSION_ENDPOINT = '';

@@ -29,8 +29,9 @@ const SW_URL = `${BASE_PATH}/sw.js`;
 // Hosted relay so self-hosters don't need their own VAPID + Firebase setup.
 // Override at build time via NEXT_PUBLIC_PUSH_RELAY_URL or at runtime by
 // calling enableWebPush({ relayBaseUrl }) from the settings UI.
+// Disabled by default — set NEXT_PUBLIC_PUSH_RELAY_URL to enable push notifications
 export const DEFAULT_RELAY_BASE_URL =
-  process.env.NEXT_PUBLIC_PUSH_RELAY_URL || 'https://notifications.relay.bulwarkmail.org';
+  process.env.NEXT_PUBLIC_PUSH_RELAY_URL || '';
 
 // Match the mobile app's lifetime hint. The JMAP server may clamp this down.
 const SUBSCRIPTION_EXPIRES_DAYS = 90;

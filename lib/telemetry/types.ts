@@ -44,4 +44,5 @@ export interface TelemetryStateFile {
   nextScheduledAt: string | null;
 }
 
-export const DEFAULT_ENDPOINT = 'https://telemetry.bulwarkmail.org/v1/heartbeat';
+// Disabled by default — configure a custom endpoint to enable telemetry
+export const DEFAULT_ENDPOINT = '';

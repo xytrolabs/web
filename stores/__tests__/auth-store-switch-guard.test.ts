@@ -68,7 +68,7 @@ describe('connectedAccountCandidates (account-switch guard)', () => {
 });
 
 describe('classifySessionMatch (account-switch verdict)', () => {
-  const CANDIDATES = ['linus@rathblume.de@mail.example.com', 'admin@rbm.systems@mail.example.com'];
+  const CANDIDATES = ['linus@rathblume.de@mail.example.com', 'admin@example.com@mail.example.com'];
 
   it('accepts when a candidate equals the stored accountId (full-email login)', () => {
     expect(classifySessionMatch(CANDIDATES, 'linus@rathblume.de@mail.example.com', [])).toBe('accept');
