@@ -1,0 +1,44 @@
+// Zor Standard Library — core types
+
+// ─── Option ──────────────────────────────────────────────────────────────
+enum Option[T] {
+    Some(T)
+    None
+}
+
+// Option helpers
+fun is_some[T](o Option[T]) bool = match o {
+    Some(v) => true
+    None => false
+}
+
+fun is_none[T](o Option[T]) bool = match o {
+    Some(v) => false
+    None => true
+}
+
+fun unwrap[T](o Option[T]) T = match o {
+    Some(v) => v
+    None => 0
+}
+
+// ─── Result ──────────────────────────────────────────────────────────────
+enum Result[T, E] {
+    Ok(T)
+    Err(E)
+}
+
+fun is_ok[T, E](r Result[T, E]) bool = match r {
+    Ok(v) => true
+    Err(e) => false
+}
+
+fun is_err[T, E](r Result[T, E]) bool = match r {
+    Ok(v) => false
+    Err(e) => true
+}
+
+fun unwrap_res[T, E](r Result[T, E]) T = match r {
+    Ok(v) => v
+    Err(e) => 0
+}

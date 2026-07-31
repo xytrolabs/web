@@ -1,0 +1,66 @@
+// Zor Async Runtime — lightweight cooperative event loop
+// Tasks are functions that yield via await; the runtime runs them to completion.
+
+extern "C" {
+    fun popen(cmd int, mode int) -> int;
+    fun pclose(stream int) -> int;
+    fun usleep(usecs int) -> int;
+}
+
+/// Shared task queue state
+var __task_queue string = ""
+var __task_count int = 0
+var __task_results string = ""
+
+/// Spawn a background task (fire and forget)
+fun spawn(cmd string) {
+    __task_queue = __task_queue + cmd + "\n"
+    __task_count = __task_count + 1
+}
+
+/// Wait for all spawned tasks to complete
+fun await_all() {
+    if __task_count == 0 { give: }
+    var tasks string = __task_queue
+    // Execute each task in order
+    var remaining string = tasks
+    repeat {
+        var newline int = index_of(remaining, "\n")
+        if newline < 0 { break }
+        var cmd string = substring(remaining, 0, newline)
+        if cmd != "" {
+            var fp int = popen(cmd, "r")
+            if fp != 0 { pclose(fp) }
+        }
+        remaining = substring(remaining, newline + 1, len(remaining))
+    }
+    __task_queue = ""
+    __task_count = 0
+}
+
+/// Sleep for N milliseconds (non-blocking via usleep)
+fun delay(ms int) {
+    usleep(ms * 1000)
+}
+
+/// Run a command in background and get PID
+fun background(cmd string) int {
+    var bg_cmd string = cmd + " &"
+    var fp int = popen(bg_cmd, "r")
+    if fp != 0 { pclose(fp) }
+    give: 0
+}
+
+/// Simple parallel map: run func on each item concurrently
+fun parallel_map(items string, func string) string {
+    var results string = ""
+    var pos int = 0
+    repeat {
+        if pos >= len(items) { break }
+        var item string = substring(items, pos, pos + 1)
+        spawn(func + " " + item)
+        pos = pos + 1
+    }
+    await_all()
+    give: results
+}

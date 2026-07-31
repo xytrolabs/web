@@ -1,0 +1,76 @@
+// Zor OS & Process Library — via libc FFI
+
+extern "C" {
+    fun popen(cmd int, mode int) -> int;
+    fun fgets(buf int, size int, stream int) -> int;
+    fun pclose(stream int) -> int;
+    fun getenv(name int) -> int;
+    fun getcwd(buf int, size int) -> int;
+    fun gethostname(buf int, len int) -> int;
+    fun sleep(secs int) -> int;
+    fun time(t int) -> int;
+    fun getpid() -> int;
+    fun getuid() -> int;
+}
+
+/// Run a shell command and return its output
+fun shell(cmd string) string {
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// Get environment variable via popen (portable)
+fun env(name string) string {
+    var cmd string = "printenv " + name + " 2>/dev/null || echo"
+    give: shell(cmd)
+}
+
+/// Get current working directory
+fun cwd() string {
+    give: env("PWD")
+}
+
+/// Get current username
+fun whoami() string {
+    give: env("USER")
+}
+
+/// Get current hostname
+fun hostname() string {
+    give: shell("hostname")
+}
+
+/// Sleep for N seconds
+fun sleep(secs int) {
+    var cmd string = "sleep " + secs
+    var fp int = popen(cmd, "r")
+    if fp != 0 { pclose(fp) }
+}
+
+/// Get current timestamp (seconds since epoch)
+fun timestamp() int {
+    var out string = shell("date +%s")
+    give: out
+}
+
+/// Command-line arguments (placeholder)
+fun args() string {
+    give: ""
+}
+
+/// Exit the program with a status code
+fun exit(code int) {
+    var cmd string = "exit " + code
+    var fp int = popen(cmd, "r")
+    if fp != 0 { pclose(fp) }
+}

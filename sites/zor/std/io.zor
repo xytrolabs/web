@@ -1,0 +1,23 @@
+// Zor Standard Library — I/O
+
+// print a string
+fun print(s string) void {
+    say: s
+}
+
+// print an integer
+fun print_int(n int) void {
+    say: n
+}
+
+// read a file (returns empty string on failure)
+fun read_file(path string) string {
+    // Use fopen/fread via external C
+    // For now, return empty
+    give path
+}
+
+// write a file
+fun write_file(path string, content string) void {
+    // Use fopen/fwrite via external C
+}

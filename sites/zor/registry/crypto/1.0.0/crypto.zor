@@ -1,0 +1,15 @@
+// Crypto Package v1.0.0 — basic hashing via shell
+
+/// Returns a simple hash of a string using sha256sum.
+fun sha256(s string) string {
+    write_file("/tmp/zor_hash_in", s)
+    var result string = run_cmd("sha256sum /tmp/zor_hash_in | cut -d' ' -f1")
+    give: result
+}
+
+/// Returns MD5 hash of a string.
+fun md5(s string) string {
+    write_file("/tmp/zor_hash_in", s)
+    var result string = run_cmd("md5sum /tmp/zor_hash_in | cut -d' ' -f1")
+    give: result
+}

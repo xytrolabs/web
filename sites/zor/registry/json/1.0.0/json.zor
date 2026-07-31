@@ -1,0 +1,18 @@
+// JSON Package v1.0.0 — simple JSON string building
+
+/// Builds a JSON object string from key-value pairs.
+/// Usage: var json string = json_obj("name", "Alice", "age", "30")
+fun json_obj(k1 string, v1 string, k2 string, v2 string) string {
+    give: "{\"" + k1 + "\":\"" + v1 + "\",\"" + k2 + "\":\"" + v2 + "\"}"
+}
+
+/// Builds a JSON array string from values.
+fun json_arr(a string, b string, c string) string {
+    give: "[\"" + a + "\",\"" + b + "\",\"" + c + "\"]"
+}
+
+/// Returns a JSON string value.
+fun json_str(s string) string { give: "\"" + s + "\"" }
+
+/// Returns a JSON number value.
+fun json_num(n int) string { give: n }

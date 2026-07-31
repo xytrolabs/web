@@ -1,0 +1,15 @@
+# Zor — build artifacts
+target/
+*.o
+*.s
+*.ll
+zor
+gen2
+gen3
+out.s
+runtime.s
+*.bak
+fix_*.py
+
+# Generated Rust files (transpiler output — not source)
+/*.rs
