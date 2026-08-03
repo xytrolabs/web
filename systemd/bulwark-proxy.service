@@ -1,0 +1,18 @@
+[Unit]
+Description=Bulwark JMAP Proxy
+After=network.target bulwark.service stalwart.service
+
+[Service]
+Type=simple
+User=raf
+WorkingDirectory=/run/media/raf/Z/PrismTechnologies/XytroMail-NG
+Environment=HOSTNAME=0.0.0.0
+Environment=PORT=3000
+ExecStart=/usr/bin/node proxy.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/proxy.log
+StandardError=append:/tmp/proxy.log
+
+[Install]
+WantedBy=multi-user.target

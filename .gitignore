@@ -1,0 +1,93 @@
+# Xytro Labs — .gitignore
+# Keep secrets, generated files, and large binaries out of git
+
+# Legacy
+GemOS/
+PrismOS/
+Rulio/
+Rulio MiNi/
+
+# Third-party / vendored
+Cypht/
+php-imap/
+ShadcnUI/
+
+# Environment & Secrets
+.env
+.env.*
+*.env.local
+*.env.production
+
+# Credentials in scripts
+migrate_emails.js
+
+# Node
+node_modules/
+**/node_modules/
+dist/
+.next/
+.next.bak/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Model files (large binaries)
+*.gguf
+*.bin
+*.safetensors
+vllm-server/llama.cpp/
+
+# Databases & data directories (contain user data)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+**/data/
+
+# Logs
+*.log
+
+# Build artifacts
+build/
+.vite/
+out/
+
+# Package locks (use package.json only)
+package-lock.json
+**/package-lock.json
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Archives & backups
+*.tar.gz
+*.zip
+*.bak
+
+# One-off fix scripts
+fix*.py
+rebuild*.py
+rewrite*.py
+merge*.py
+write_dashboard*.py
+patch_*.py
+restore_*.py
+
+# Cache
+.xael-cache/
+.cache/

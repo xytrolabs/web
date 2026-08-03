@@ -1,0 +1,51 @@
+# ── Xael AI API Server ──
+# Gitignore — excludes sensitive data, dependencies, and build artifacts
+
+# Dependencies
+node_modules/
+chat-template/node_modules/
+
+# Build output
+chat-template/.next/
+chat-template/.next.bak/
+
+# Sensitive data — NEVER commit these
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# One-off / temp scripts
+fix*.py
+rebuild.py
+rewrite_auth.py
+merge_usage.py
+write_dashboard*.py
+fix_*.py
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+/tmp/
+
+# Package locks (use package.json only)
+package-lock.json
+chat-template/package-lock.json
+
+# Keep-alive in root (the one in /PrismTechnologies is the master)
+# keep-alive.sh is fine to include

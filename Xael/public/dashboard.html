@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Valis API — Xytro Labs</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
+</script>
+<style>
+:root{
+  --bg:#f8f9fb; --bg2:#fff; --bg3:#f0f1f5; --bg4:#e8e9ef;
+  --text:#18181b; --text2:#6b6b80; --text3:#9d9db0;
+  --accent:#4f6ef7; --accent2:#3b5de7; --accent-light:rgba(79,110,247,0.08);
+  --green:#10b981; --red:#ef4444; --amber:#f59e0b;
+  --bd:#e4e4ed; --bd2:#d4d4dd;
+  --r:10px; --r2:14px; --shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+[data-theme="dark"]{
+  --bg:#0a0a14; --bg2:#111122; --bg3:#1a1a2e; --bg4:#222240;
+  --text:#f0edf8; --text2:#8e8e98; --text3:#5a5a70;
+  --accent:#7c3aed; --accent2:#a78bfa; --accent-light:rgba(124,58,237,0.12);
+  --green:#30d158; --red:#ff453a; --amber:#f59e0b;
+  --bd:rgba(255,255,255,0.08); --bd2:rgba(255,255,255,0.12);
+  --shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Login */
+#login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px}
+#login-page.hidden{display:none}
+.login-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:40px 32px;width:100%;max-width:400px;box-shadow:var(--shadow)}
+.login-logo{width:64px;height:64px;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto}
+.login-card h1{font-size:1.3rem;font-weight:700;margin-bottom:4px;text-align:center}
+.login-card .sub{color:var(--text2);font-size:.875rem;margin-bottom:24px;text-align:center}
+.login-card form{display:flex;flex-direction:column;gap:12px}
+#login-error{color:var(--red);font-size:.8rem;min-height:20px}
+.login-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text3);font-size:.8rem}
+.login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--bd)}
+.login-alt{display:block;width:100%;padding:10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--text);font-size:.875rem;cursor:pointer;text-align:center;transition:all .15s;text-decoration:none}
+.login-alt:hover{background:var(--bg3);text-decoration:none}
+.login-footer{font-size:.8rem;color:var(--text2);margin-top:16px;text-align:center}
+
+/* Dashboard shell */
+#dashboard{display:none}
+#dashboard.visible{display:flex}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--bd);padding:16px 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar-brand{padding:0 14px 16px;display:flex;align-items:center;gap:8px}
+.sidebar-brand img{width:26px;height:26px}
+.sidebar-brand span{font-size:1rem;font-weight:700;letter-spacing:-.3px}
+.sidebar-nav{flex:1;display:flex;flex-direction:column;gap:1px;padding:0 8px}
+.sidebar-nav a{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;color:var(--text2);text-decoration:none;font-size:.82rem;font-weight:500;transition:all .12s;cursor:pointer}
+.sidebar-nav a svg{opacity:.5;transition:opacity .12s;flex-shrink:0}
+.sidebar-nav a:hover{background:var(--bg3);color:var(--text);text-decoration:none}
+.sidebar-nav a:hover svg{opacity:.75}
+.sidebar-nav a.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.sidebar-nav a.active svg{opacity:1;color:var(--accent)}
+.sidebar-bottom{padding:0 8px;margin-top:auto;display:flex;flex-direction:column;gap:1px;border-top:1px solid var(--bd);padding-top:12px}
+.sidebar-bottom a{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:7px;color:var(--text2);text-decoration:none;font-size:.8rem;transition:all .12s}
+.sidebar-bottom a:hover{color:var(--text);text-decoration:none}
+.sidebar-bottom a.logout-link{color:var(--red)}
+.sidebar-bottom a.logout-link:hover{background:rgba(239,68,68,0.06)}
+
+.main{margin-left:220px;flex:1;padding:28px 36px;max-width:1060px}
+.main section{display:none}
+.main section.active{display:block}
+
+.page-header{margin-bottom:24px}
+.page-header h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+.page-header p{color:var(--text2);font-size:.84rem;max-width:600px}
+
+/* Info banner */
+.info-banner{background:var(--accent-light);border:1px solid rgba(79,110,247,0.15);border-radius:var(--r);padding:10px 14px;font-size:.8rem;color:var(--text2);margin-bottom:20px}
+
+/* Balance cards row */
+.balance-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.balance-card{flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:18px 22px;box-shadow:var(--shadow)}
+.balance-card .blabel{font-size:.78rem;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.balance-card .bvalue{font-size:1.8rem;font-weight:800;display:flex;align-items:baseline;gap:6px}
+.balance-card .bvalue .currency{font-size:1rem;color:var(--text2);font-weight:500}
+.balance-card .baction{margin-top:10px}
+
+/* Filters row */
+.filters-row{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.filter-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;border:1px solid var(--bd);background:var(--bg2);color:var(--text);font-size:.8rem;cursor:pointer;transition:all .12s;font-family:inherit;box-shadow:var(--shadow)}
+.filter-btn:hover{background:var(--bg3)}
+.filter-btn svg{opacity:.5}
+
+/* Stats row */
+.stats-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.stat-box{flex:1;min-width:140px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:16px 20px;box-shadow:var(--shadow)}
+.stat-box .slabel{font-size:.73rem;color:var(--text2);margin-bottom:6px;font-weight:500}
+.stat-box .svalue{font-size:1.6rem;font-weight:800}
+.stat-box .svalue.accent{color:var(--accent)}
+
+/* Chart */
+.chart-container{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+.chart-tabs{display:flex;gap:2px;margin-bottom:14px}
+.chart-tab{padding:5px 14px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:.78rem;cursor:pointer;font-family:inherit;font-weight:500;transition:all .12s}
+.chart-tab.active{background:var(--bg3);color:var(--text);font-weight:600}
+.chart-wrap{position:relative;height:260px}
+
+/* Per-model breakdown */
+.model-breakdown{margin-top:20px}
+.model-row{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);padding:16px 20px;margin-bottom:10px;box-shadow:var(--shadow)}
+.model-row .mname{font-weight:700;font-size:.9rem;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.model-row .mstats{display:flex;gap:24px;flex-wrap:wrap}
+.model-row .mstat{flex:1;min-width:180px}
+.model-row .mstat .mslabel{font-size:.72rem;color:var(--text2);margin-bottom:4px}
+.model-row .mstat .msvalue{font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.model-row .mstat .sparkline{height:40px;width:100%}
+
+/* Tables */
+.data-table{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)}
+.data-table table{width:100%;border-collapse:collapse;font-size:.82rem}
+.data-table th,.data-table td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--bd)}
+.data-table th{color:var(--text3);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;background:var(--bg3)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(0,0,0,0.015)}
+.data-table .empty-row td{text-align:center;padding:36px 16px;color:var(--text3);font-size:.82rem}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:7px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .12s;font-family:inherit}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent2)}
+.btn-danger{background:transparent;border:1px solid rgba(239,68,68,0.25);color:var(--red)}
+.btn-danger:hover:not(:disabled){background:rgba(239,68,68,0.06);border-color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:.73rem;border-radius:5px}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--text2);padding:3px 7px;font-size:.7rem;cursor:pointer;border-radius:5px;transition:all .12s;font-family:inherit}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+
+/* Key cell */
+.key-cell{display:flex;align-items:center;gap:6px}
+.key-cell code{font-size:.78rem;color:var(--text2);font-family:"SF Mono","Fira Code",monospace;background:var(--bg3);padding:2px 6px;border-radius:4px}
+
+/* Inline edit */
+.inline-edit{border:none;background:transparent;font-size:.82rem;color:var(--text);padding:2px 4px;border-radius:4px;font-family:inherit;width:auto;min-width:60px}
+.inline-edit:focus{outline:none;background:var(--bg3);box-shadow:0 0 0 2px var(--accent-light)}
+
+/* Toasts */
+.copy-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 20px;border-radius:10px;font-size:.82rem;z-index:1000;opacity:0;transition:opacity .2s;pointer-events:none}
+.copy-toast.show{opacity:1}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:12px 22px;border-radius:10px;font-weight:600;font-size:.82rem;z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;box-shadow:0 4px 16px rgba(79,110,247,0.3)}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.error{background:var(--red);box-shadow:0 4px 16px rgba(239,68,68,0.3)}
+
+/* Inputs & selects */
+input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:7px;padding:9px 12px;color:var(--text);font-size:.85rem;width:100%;font-family:inherit;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+
+/* Radio group */
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.radio-card{padding:12px 18px;border:1px solid var(--bd);border-radius:var(--r);background:var(--bg2);cursor:pointer;text-align:center;transition:all .12s;min-width:80px;font-weight:600;font-size:.85rem;box-shadow:var(--shadow)}
+.radio-card:hover{border-color:var(--bd2)}
+.radio-card.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+
+/* Total line */
+.total-line{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--bg3);border-radius:var(--r);margin-bottom:16px;font-weight:600}
+
+/* Status badge */
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
+.status-badge.success{background:rgba(16,185,129,0.1);color:var(--green)}
+.status-badge.pending{background:rgba(245,158,11,0.1);color:var(--amber)}
+.status-badge.free{background:rgba(16,185,129,0.1);color:var(--green)}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bd);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
+  .sidebar{width:100%;position:relative;flex-direction:row;padding:10px;overflow-x:auto;bottom:auto}
+  .sidebar-nav{flex-direction:row;flex:0}
+  .sidebar-brand,.sidebar-bottom{display:none}
+  .main{margin-left:0;padding:16px}
+  .balance-row,.stats-row{flex-direction:column}
+}
+
+/* ── Polish: animations & loading ── */
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes shimmer { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+@keyframes countUp { from { opacity:0; } to { opacity:1; } }
+
+.main section.active { animation: fadeIn 0.3s ease; }
+.stat-box, .balance-card { transition: transform 0.15s, box-shadow 0.15s; }
+.stat-box:hover, .balance-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+.skeleton { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%); background-size: 400px 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+.skeleton-text { height: 14px; margin: 8px 0; width: 80%; }
+.skeleton-value { height: 28px; margin: 8px 0; width: 60%; }
+.skeleton-card { height: 80px; border-radius: var(--r2); }
+
+.sidebar-nav a { position: relative; }
+.sidebar-nav a.active::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; background:var(--accent); border-radius:0 3px 3px 0; }
+
+.chart-container { overflow: hidden; }
+
+.model-row { animation: fadeIn 0.4s ease; transition: transform 0.15s, box-shadow 0.15s; }
+.model-row:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+
+.toast { animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+.btn { transition: all 0.18s ease; }
+.btn:active { transform: scale(0.97); }
+
+.copy-toast { animation: fadeIn 0.2s ease; }
+
+/* Pulse dot for live data */
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--green); margin-right:6px; animation: pulse 2s infinite; }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN - matches XytroMail design -->
+<div id="login-page" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a14;font-family:Inter,-apple-system,sans-serif">
+  <div style="width:100%;max-width:420px;padding:0 20px">
+    <div style="background:#111122;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+      <div style="text-align:center;margin-bottom:20px">
+        <img src="/valis.png" alt="Valis" style="width:48px;height:48px;border-radius:12px">
+      </div>
+      <h1 style="text-align:center;font-size:1.5rem;font-weight:800;color:#f0edf8;margin-bottom:6px">Welcome to <span style="color:#a78bfa">Valis API</span></h1>
+      <p class="sub" style="text-align:center;color:#8e8e98;font-size:.85rem;margin-bottom:24px">Sign in to manage your API keys and usage.</p>
+      <div id="login-error" style="padding:12px 16px;border-radius:10px;font-size:.85rem;font-weight:500;display:none;background:rgba(255,69,58,0.12);color:#ff453a;border:1px solid rgba(255,69,58,0.2);margin-bottom:14px"></div>
+      <form id="login-form" style="display:flex;flex-direction:column;gap:14px">
+        <div><label style="font-size:.78rem;font-weight:600;color:#8e8e98;text-transform:uppercase;letter-spacing:.04em">Username</label>
+        <input type="text" id="login-username" placeholder="your_username" required autocomplete="username" style="background:#0d0d20;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;color:#f0edf8;font-size:.92rem;width:100%;margin-top:6px"></div>
+        <div><label style="font-size:.78rem;font-weight:600;color:#8e8e98;text-transform:uppercase;letter-spacing:.04em">Password</label>
+        <div style="position:relative;margin-top:6px"><input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" style="background:#0d0d20;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;color:#f0edf8;font-size:.92rem;width:100%"><button type="button" onclick="var i=document.getElementById('login-password');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8e8e98;font-size:.78rem;font-weight:600;cursor:pointer">Show</button></div></div>
+        <button type="submit" id="login-btn" style="width:100%;padding:14px;border-radius:12px;font-weight:700;font-size:.92rem;border:none;cursor:pointer;background:#7c3aed;color:#fff">Login</button>
+      </form>
+    </div>
+    <p style="text-align:center;margin-top:16px;color:#8e8e98;font-size:.78rem">Your account works across all Xytro sites.<br><a href="https://mail.xytro.site" style="color:#a78bfa;text-decoration:none">← Back to XytroMail</a></p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/valis.png" alt="Valis">
+      <span>Valis API</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a data-tab="usage" class="active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Usage
+      </a>
+      <a data-tab="keys">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="12" r="6"/><line x1="12.5" y1="12.5" x2="22" y2="22"/></svg>
+        API Keys
+      </a>
+      <a data-tab="models">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Models
+      </a>
+      <a data-tab="topup">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Top Up
+      </a>
+      <a data-tab="billing">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Billing
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="https://xytro.site" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        Xytro Labs
+      </a>
+      <a href="https://valischat.xytro.site" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Chat
+      </a>
+      <a class="logout-link" id="logoutBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </a>
+      <a id="themeToggle" style="cursor:pointer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <span id="themeLabel">Dark Mode</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- USAGE -->
+    <section id="tab-usage" class="active">
+      <div class="page-header"><h1>Usage</h1><p>Monitor your API consumption and balance.</p></div>
+      <div class="balance-row">
+        <div class="balance-card">
+          <div class="blabel">Topped-up balance</div>
+          <div class="bvalue"><span id="bal-value">—</span><span class="currency">USD</span></div>
+          <div class="baction"><a href="#" class="btn btn-sm btn-primary" onclick="switchTab('topup');return false">Top up</a></div>
+        </div>
+        <div class="balance-card">
+          <div class="blabel">Total cost</div>
+          <div class="bvalue"><span id="total-cost">—</span><span class="currency">USD</span></div>
+        </div>
+      </div>
+      <div class="filters-row">
+        <select id="time-range" style="width:auto;min-width:130px">
+          <option value="30">Last 30 days</option>
+          <option value="60">Last 60 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="180">Last 6 months</option>
+          <option value="365">Last 1 year</option>
+          <option value="0">All time</option>
+        </select>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="slabel">Cost</div><div class="svalue accent" id="stat-cost"><div class="skeleton skeleton-value"></div></div></div>
+        <div class="stat-box"><div class="slabel">API requests</div><div class="svalue" id="stat-requests">—</div></div>
+        <div class="stat-box"><div class="slabel">Tokens</div><div class="svalue" id="stat-tokens">—</div></div>
+      </div>
+      <div class="stats-row" style="margin-bottom:8px">
+        <div class="stat-box" style="background:rgba(16,185,129,0.04);border-color:rgba(16,185,129,0.15)">
+          <div class="slabel"><span class="live-dot"></span> Cache hit ratio</div>
+          <div class="svalue" style="color:var(--green)" id="stat-cache-ratio">—</div>
+        </div>
+        <div class="stat-box" style="background:rgba(16,185,129,0.04);border-color:rgba(16,185,129,0.15)">
+          <div class="slabel">Estimated savings</div>
+          <div class="svalue" style="color:var(--green)" id="stat-cache-savings">—</div>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-tabs">
+          <button class="chart-tab active" data-chart="usage">Usage</button>
+          <button class="chart-tab" data-chart="cost">Cost</button>
+        </div>
+        <div class="chart-wrap" id="chart-area"><div class="skeleton skeleton-card" style="height:260px"></div><canvas id="costChart" style="display:none"></canvas></div>
+      </div>
+      <div class="model-breakdown" id="model-breakdown"><div class="skeleton skeleton-card" style="height:60px;margin-bottom:10px"></div><div class="skeleton skeleton-card" style="height:60px;margin-bottom:10px"></div><div class="skeleton skeleton-card" style="height:60px"></div></div>
+    </section>
+
+    <!-- API KEYS -->
+    <section id="tab-keys">
+      <div class="page-header">
+        <h1>API Keys</h1>
+        <p>Your API keys are listed below. Save them securely — do not share your API key with others or expose it in client-side code.</p>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <button class="btn btn-primary" id="genKeyBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create new API key
+        </button>
+      </div>
+      <div class="data-table">
+        <table><thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last used</th><th style="width:70px"></th></tr></thead>
+        <tbody id="keys-list"><tr><td colspan="5" class="empty-row">No API keys yet — create one to get started.</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- MODELS -->
+    <section id="tab-models">
+      <div class="page-header">
+        <h1>Models &amp; Pricing</h1>
+        <p>Available models, context windows, and per-token pricing.</p>
+      </div>
+      <div class="data-table">
+        <table><thead><tr><th>API ID</th><th>Model</th><th>Context</th><th>Pricing</th><th>Notes</th></tr></thead>
+        <tbody id="models-table"><tr><td colspan="5" class="empty-row">Loading models…</td></tr></tbody></table>
+      </div>
+      <p style="margin-top:12px;font-size:.76rem;color:var(--text3)">All models accessible with any API key. Cached tokens are charged at <strong>7.5%</strong> of the input price.</p>
+    </section>
+
+    <!-- TOP UP -->
+    <section id="tab-topup">
+      <div class="page-header">
+        <h1>Top Up</h1>
+        <p>Add funds to your API balance via Cash App. Your balance is shared across all API keys.</p>
+      </div>
+      <div class="stats-row" style="margin-bottom:24px">
+        <div class="stat-card"><div class="stat-value" id="credit-balance">$0.00</div><div class="stat-label">Current Balance</div></div>
+        <div class="stat-card"><div class="stat-value" id="credit-spent">$0.00</div><div class="stat-label">Spent This Month</div></div>
+        <div class="stat-card"><div class="stat-value" id="credit-purchased">$0.00</div><div class="stat-label">Total Topped Up</div></div>
+      </div>
+      <div style="background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:20px">
+        <h3 style="margin:0 0 4px;font-size:.95rem">Add Balance</h3>
+        <p style="margin:0 0 16px;font-size:.78rem;color:var(--text2)">Pay via Cash App <strong>$RafaelHernandez1106</strong> — include your username in the note. After sending, click "I Paid" below.</p>
+        <div style="font-size:.78rem;color:var(--text2);margin-bottom:8px">Select Amount</div>
+        <div class="radio-group" id="amount-options"></div>
+        <div class="total-line" id="topup-total" style="margin:16px 0">Total: <strong>$5.00</strong></div>
+        <button class="btn btn-primary" id="topupBtn" style="padding:10px 24px;width:100%;max-width:320px">💳 I Paid — Record Payment</button>
+        <p style="margin-top:8px;font-size:.72rem;color:var(--text3)">Payments are reviewed and approved shortly. Your balance updates automatically on approval.</p>
+      </div>
+      <h3 style="font-size:.9rem;margin-bottom:12px">Payment History</h3>
+      <div class="data-table">
+        <table><thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody id="credits-history"><tr><td colspan="3" class="empty-row">No payments yet</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <!-- BILLING -->
+    <section id="tab-billing">
+      <div class="page-header">
+        <h1>Billing</h1>
+        <p>Payment history and invoices.</p>
+      </div>
+      <div class="data-table">
+        <table><thead><tr><th>Invoice No.</th><th>Status</th><th>Amount</th><th>Payment method</th><th>Created</th></tr></thead>
+        <tbody id="billing-list"><tr><td colspan="5" class="empty-row">No payments yet</td></tr></tbody></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="copy-toast" class="copy-toast">Copied to clipboard</div>
+<div id="toast" class="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var API = '/v1';
+  var costChart = null;
+  var isAuth = false;
+  var selectedAmount = 5;
+  var currentBalance = 0;
+
+  function formatCost(c) {
+    if (c == null || c === 0) return '0.00';
+    if (c < 0.0001) return '<0.0001';
+    if (c < 0.01) return c.toFixed(6);
+    if (c < 1) return c.toFixed(4);
+    return c.toFixed(2);
+  }
+
+  function formatNum(n) {
+    if (n == null) return '0';
+    return Number(n).toLocaleString();
+  }
+
+  function toast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    clearTimeout(t._tid);
+    t._tid = setTimeout(function(){ t.classList.remove('show'); }, 4000);
+  }
+
+  function api(method, path, body) {
+    var opts = { method: method, headers: { 'Content-Type': 'application/json' }, credentials: 'include' };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(API + path, opts).then(function(r) {
+      if (!r.ok) return r.json().then(function(d){ return { error: d.error || ('HTTP ' + r.status), _status: r.status }; }).catch(function(){ return { error: 'HTTP ' + r.status, _status: r.status }; });
+      return r.json().catch(function(){ return { error: 'Invalid response' }; });
+    }).catch(function() {
+      return { error: 'Network error — check your connection' };
+    });
+  }
+
+  // Theme toggle
+  var isDark = localStorage.getItem('valis-theme') === 'dark';
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.getElementById('themeLabel').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+  }
+  applyTheme();
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    isDark = !isDark;
+    localStorage.setItem('valis-theme', isDark ? 'dark' : 'light');
+    applyTheme();
+  });
+
+  // Auth — tighter checks matching XytroMail
+  var lastAuthCheck = 0;
+  function checkAuthAndLoad() {
+    api('GET', '/auth/me').then(function(data) {
+      if (data && data.authenticated && !data.error) {
+        isAuth = true;
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('login-page').classList.add('hidden');
+        document.getElementById('dashboard').style.display='flex'; document.getElementById('dashboard').classList.add('visible');
+        loadUsage();
+        loadKeys();
+      }
+    }).catch(function() {});
+  }
+
+  function doLogin(username, password) {
+    var errEl = document.getElementById('login-error');
+    var btn = document.getElementById('login-btn');
+    errEl.style.display = 'none';
+    if (!username || !password) { errEl.textContent = 'Enter username and password'; errEl.style.display = 'block'; return; }
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    api('POST', '/auth/login', { username: username, password: password }).then(function(data) {
+      btn.disabled = false; btn.textContent = 'Login';
+      if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+      checkAuthAndLoad();
+    }).catch(function() {
+      btn.disabled = false; btn.textContent = 'Login';
+      errEl.textContent = 'Network error. Try again.'; errEl.style.display = 'block';
+    });
+  }
+
+  function showLogin() {
+    isAuth = false;
+    document.getElementById('login-page').classList.remove('hidden');
+    document.getElementById('dashboard').style.display='none'; document.getElementById('dashboard').classList.remove('visible');
+    if (costChart) { costChart.destroy(); costChart = null; }
+    setTimeout(redirectToLogin, 1500);
+  }
+
+  function doLogin(username, password) {
+    var errEl = document.getElementById('login-error');
+    var btn = document.querySelector('#login-form .btn');
+    errEl.textContent = '';
+    if (!username || !password) { errEl.textContent = 'Enter username and password'; return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+    api('POST', '/auth/login', { username: username, password: password }).then(function(data) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+      if (data.error) { errEl.textContent = data.error; return; }
+      checkAuthAndLoad();
+    }).catch(function() {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign In'; }
+      errEl.textContent = 'Network error. Try again.';
+    });
+  }
+
+  function doLogout() {
+    api('POST', '/auth/logout').then(function() {
+      document.getElementById('login-page').style.display = 'flex';
+      document.getElementById('dashboard').style.display='none'; document.getElementById('dashboard').classList.remove('visible');
+      if (costChart) { costChart.destroy(); costChart = null; }
+      document.getElementById('bal-value').textContent = '—';
+      document.getElementById('total-cost').textContent = '—';
+      document.getElementById('model-breakdown').innerHTML = '';
+    }).catch(function() {});
+  }
+
+  // Usage
+  var currentDays = 30;
+  function loadUsage() {
+    api('GET', '/usage').then(function(d) {
+      if (d.error) { if (d._status === 401) {  return; } toast(d.error, true); return; }
+      var days = parseInt(document.getElementById('time-range').value) || 30;
+      currentDays = days;
+
+      // Filter daily data by selected range
+      var allDaily = (d.daily || []).sort(function(a,b){ return b.date.localeCompare(a.date); });
+      var daily = days > 0 ? allDaily.slice(0, days) : allDaily;
+      // Recompute filtered totals
+      var filtRequests = 0, filtTokens = 0, filtCost = 0;
+      for (var di = 0; di < daily.length; di++) {
+        filtRequests += daily[di].requests || 0;
+        filtTokens += daily[di].tokens || 0;
+        filtCost += daily[di].cost || 0;
+      }
+      if (filtRequests === 0 && daily.length > 0) { filtRequests = daily.length; }
+
+      document.getElementById('stat-requests').textContent = formatNum(filtRequests);
+      document.getElementById('stat-tokens').textContent = formatNum(filtTokens);
+      document.getElementById('stat-cost').textContent = '$' + formatCost(filtCost);
+      document.getElementById('total-cost').textContent = '$' + formatCost(d.cost || 0);
+
+      // Cache stats
+      document.getElementById('stat-cache-ratio').textContent = (d.cacheRatio || 0) + '%';
+      document.getElementById('stat-cache-savings').textContent = '$' + formatCost(d.cacheSavings || 0);
+
+      api('GET', '/keys').then(function(keys) {
+        if (!keys.error && Array.isArray(keys) && keys.length > 0) {
+          currentBalance = keys[0].balance || 0;
+          document.getElementById('bal-value').textContent = '$' + currentBalance.toFixed(2);
+        } else {
+          document.getElementById('bal-value').textContent = '—';
+        }
+      });
+
+      // Chart — respect active chart tab
+      var chartType = document.querySelector('.chart-tab.active');
+      var chartMode = chartType ? chartType.getAttribute('data-chart') : 'usage';
+      var ctx = document.getElementById('costChart').getContext('2d');
+      if (costChart) costChart.destroy();
+      document.getElementById('chart-area').querySelector('.skeleton').style.display='none';
+      document.getElementById('costChart').style.display='block';
+
+      if (chartMode === 'cost') {
+        // Cost pie chart per model
+        var models = d.models || [];
+        if (models.length > 0) {
+          var cLabels = [], cCosts = [], cColors = ['#4f6ef7','#8b5cf6','#ec4899','#10b981','#f59e0b','#ef4444'];
+          var cTotal = 0;
+          for (var mi = 0; mi < models.length; mi++) {
+            cLabels.push(models[mi].name);
+            cCosts.push(models[mi].cost || 0);
+            cTotal += (models[mi].cost || 0);
+          }
+          costChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: cLabels, datasets: [{ data: cCosts, backgroundColor: cColors.slice(0, models.length), borderColor: 'transparent', borderWidth: 2 }] },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    usePointStyle: true, boxWidth: 10, padding: 12, font: {size:11},
+                    generateLabels: function(chart) {
+                      var data = chart.data;
+                      var ds = data.datasets[0];
+                      var total = ds.data.reduce(function(a,b){return a+b;},0);
+                      return data.labels.map(function(label, i) {
+                        var pct = total > 0 ? Math.round((ds.data[i]/total)*100) : 0;
+                        return { text: label + ' ($' + formatCost(ds.data[i]) + ' · ' + pct + '%)', fillStyle: ds.backgroundColor[i], strokeStyle: ds.backgroundColor[i], pointStyle: 'circle', index: i };
+                      });
+                    }
+                  }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(ctx) {
+                      var total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+                      var pct = total > 0 ? Math.round((ctx.raw/total)*100) : 0;
+                      return ' ' + ctx.label + ': $' + formatCost(ctx.raw) + ' (' + pct + '%)';
+                    }
+                  }
+                }
+              }
+            }
+          });
+        } else {
+          costChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: ['No data'], datasets: [{ data: [0], backgroundColor: 'rgba(79,110,247,0.2)', borderRadius: 4 }] },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false }, subtitle: { display: true, text: 'Make an API call to see cost data.', color: '#888', font: {size:11} } },
+              scales: { x: { display: false }, y: { display: false } }
+            }
+          });
+        }
+      } else if (chartMode === 'key') {
+        // API Key daily line chart — use time-filtered daily
+        if (daily.length > 0) {
+          var labels = [], costVals = [];
+          for (var i = daily.length - 1; i >= 0; i--) {
+            labels.push(daily[i].date.slice(5));
+            costVals.push(daily[i].cost || 0);
+          }
+          costChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{ label: 'Cost (USD)', data: costVals, borderColor: '#4f6ef7', backgroundColor: 'rgba(79,110,247,0.06)', fill: true, tension: 0.3, pointRadius: 3, pointHoverRadius: 5, pointBackgroundColor: '#4f6ef7' }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: { legend: { display: false } },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: '#888', maxTicksLimit: 14, font: {size:10} } },
+                y: { grid: { color: 'rgba(128,128,128,0.15)' }, ticks: { color: '#888', callback: function(v){ return '$'+v.toFixed(4); }, font: {size:10} }, beginAtZero: true }
+              }
+            }
+          });
+        } else {
+          costChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: ['No data'], datasets: [{ data: [0], backgroundColor: 'rgba(79,110,247,0.2)', borderRadius: 4 }] },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false }, subtitle: { display: true, text: 'Make an API call to see usage data.', color: '#888', font: {size:11} } },
+              scales: { x: { display: false }, y: { display: false } }
+            }
+          });
+        }
+      } else {
+        // Model bar chart with cache hit/miss breakdown
+        var models = d.models || [];
+        if (models.length > 0) {
+          var mLabels = [], mMisses = [], mHits = [], mColors = ['#4f6ef7','#8b5cf6','#ec4899','#10b981','#f59e0b','#ef4444','#06b6d4','#84cc16'];
+          // Use global cache ratio (same as stat card) for per-model breakdown
+          var globalRatio = (d.cacheRatio || 0) / 100;
+          for (var mi = 0; mi < models.length; mi++) {
+            mLabels.push(models[mi].name);
+            var hits = models[mi].cacheHits || Math.round((models[mi].requests || 0) * globalRatio);
+            var misses = (models[mi].requests || 0) - hits;
+            mHits.push(hits);
+            mMisses.push(Math.max(0, misses));
+          }
+          costChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: mLabels,
+              datasets: [
+                { label: 'Cache Miss', data: mMisses, backgroundColor: '#ef4444', borderRadius: 4, borderSkipped: false },
+                { label: 'Cache Hit', data: mHits, backgroundColor: '#10b981', borderRadius: 4, borderSkipped: false }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 10, padding: 15, font: {size:11}, color: '#888' } },
+                tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + formatNum(ctx.raw) + ' requests'; } } }
+              },
+              scales: {
+                x: { stacked: true, grid: { display: false }, ticks: { color: '#888', font: {size:11} } },
+                y: { stacked: true, grid: { color: 'rgba(128,128,128,0.15)' }, ticks: { color: '#888', callback: function(v){ return formatNum(v); }, font: {size:10} }, beginAtZero: true }
+              }
+            }
+          });
+        } else {
+          costChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: ['No data'], datasets: [{ data: [0], backgroundColor: 'rgba(79,110,247,0.2)', borderRadius: 4 }] },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { display: false }, subtitle: { display: true, text: 'Make an API call to see model data.', color: '#888', font: {size:11} } },
+              scales: { x: { display: false }, y: { display: false } }
+            }
+          });
+        }
+      }
+
+      // Per-model breakdown with sparklines
+      var models = d.models || [], mb = document.getElementById('model-breakdown');
+      if (!models.length) { mb.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3)">No per-model data yet — make API calls to see the breakdown.</div>'; return; }
+      var html = '';
+      for (var j = 0; j < models.length; j++) {
+        var m = models[j];
+        html += '<div class="model-row"><div class="mname">' + escHtml(m.name) + '</div><div class="mstats">';
+        html += '<div class="mstat"><div class="mslabel">API requests</div><div class="msvalue">' + formatNum(m.requests) + '</div>';
+        html += '<div class="sparkline"><canvas id="spark-r-' + j + '" height="40"></canvas></div></div>';
+        html += '<div class="mstat"><div class="mslabel">Tokens</div><div class="msvalue">' + formatNum(m.tokens) + '</div>';
+        html += '<div class="sparkline"><canvas id="spark-t-' + j + '" height="40"></canvas></div></div>';
+        html += '<div class="mstat"><div class="mslabel">Cost</div><div class="msvalue accent">$' + formatCost(m.cost) + '</div>';
+        html += '<div class="sparkline"><canvas id="spark-c-' + j + '" height="40"></canvas></div></div>';
+        html += '</div></div>';
+      }
+      mb.innerHTML = html;
+
+      // Draw sparklines
+      for (var j = 0; j < models.length; j++) {
+        var m = models[j];
+        var sparkData = (m.daily || []).slice(-30);
+        if (sparkData.length > 0) {
+          var sparkReq = sparkData.map(function(x){return x.requests||0;});
+          var sparkTok = sparkData.map(function(x){return x.tokens||0;});
+          drawSparkline('spark-r-' + j, sparkReq, '#4f6ef7');
+          drawSparkline('spark-t-' + j, sparkTok, '#8b5cf6');
+          drawSparkline('spark-c-' + j, sparkData.map(function(x){return x.cost||0;}), '#10b981');
+        }
+      }
+    });
+  }
+
+  function drawSparkline(canvasId, data, color) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.parentElement.offsetWidth;
+    canvas.width = w;
+    canvas.height = 40;
+    var max = Math.max.apply(null, data) || 1;
+    var min = Math.min.apply(null, data);
+    var range = max - min || 1;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (var i = 0; i < data.length; i++) {
+      var x = (i / (data.length - 1)) * w;
+      var y = 36 - ((data[i] - min) / range) * 32;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // Fill area
+    ctx.lineTo(w, 40);
+    ctx.lineTo(0, 40);
+    ctx.closePath();
+    ctx.fillStyle = color.replace(')', ',0.06)').replace('rgb','rgba');
+    if (color.startsWith('#')) {
+      ctx.fillStyle = color + '18';
+    }
+    ctx.fill();
+  }
+
+  // API Keys
+  function loadKeys() {
+    api('GET', '/keys').then(function(keys) {
+      var list = document.getElementById('keys-list');
+      if (keys.error) {
+        if (keys._status === 401) {  return; }
+        list.innerHTML = '<tr><td colspan="5" class="empty-row">Error loading keys</td></tr>'; return;
+      }
+      if (!Array.isArray(keys) || keys.length === 0) { list.innerHTML = '<tr><td colspan="5" class="empty-row">No API keys yet — create one to get started.</td></tr>'; return; }
+      var rows = [];
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var name = k.name || 'Unnamed';
+        rows.push(
+          '<tr>' +
+          '<td><input class="inline-edit key-name-input" value="' + escAttr(name) + '" data-key="' + escAttr(k.fullKey) + '" style="font-weight:500"></td>' +
+          '<td><div class="key-cell"><code>' + escHtml(k.key) + '</code>' +
+            '<button class="btn-ghost copy-key-btn" data-key="' + escAttr(k.fullKey) + '" title="Copy"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>' +
+          '</div></td>' +
+          '<td style="font-size:.8rem;color:var(--text2)">' + (k.created ? k.created.slice(0,10) : '—') + '</td>' +
+          '<td style="font-size:.8rem;color:var(--text2)">' + (k.lastUsed ? k.lastUsed.slice(0,10) : '—') + '</td>' +
+          '<td><button class="btn btn-danger btn-sm del-key-btn" data-key="' + escAttr(k.fullKey) + '">Delete</button></td>' +
+          '</tr>'
+        );
+      }
+      list.innerHTML = rows.join('');
+
+      // Wire up name editing
+      var nameInputs = list.querySelectorAll('.key-name-input');
+      for (var ni = 0; ni < nameInputs.length; ni++) {
+        nameInputs[ni].addEventListener('change', function() {
+          var fk = this.getAttribute('data-key');
+          var newName = this.value.trim();
+          api('PATCH', '/keys/' + encodeURIComponent(fk), { name: newName }).then(function(d) {
+            if (!d.error) toast('Key renamed');
+          });
+        });
+      }
+
+      // Wire up copy
+      var copies = list.querySelectorAll('.copy-key-btn');
+      for (var c = 0; c < copies.length; c++) {
+        copies[c].addEventListener('click', function() {
+          var fk = this.getAttribute('data-key');
+          navigator.clipboard.writeText(fk).then(function() {
+            var ct = document.getElementById('copy-toast');
+            ct.classList.add('show');
+            setTimeout(function(){ ct.classList.remove('show'); }, 2000);
+          });
+        });
+      }
+
+      // Wire up delete
+      var dels = list.querySelectorAll('.del-key-btn');
+      for (var d = 0; d < dels.length; d++) {
+        dels[d].addEventListener('click', function() {
+          deleteKey(this.getAttribute('data-key'));
+        });
+      }
+    });
+  }
+
+  function generateKey() {
+    var btn = document.getElementById('genKeyBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating…';
+    api('POST', '/keys', {}).then(function(d) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create new API key';
+      if (d.error) {
+        if (d._status === 401) {  toast('Session expired — please sign in again', true); return; }
+        toast(d.error, true); return;
+      }
+      toast('Key: ' + (d.key || '') + ' — copy it now, won\'t be shown again.');
+      loadKeys(); loadUsage();
+    }).catch(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create new API key';
+      toast('Failed to create key', true);
+    });
+  }
+
+  function deleteKey(fk) {
+    if (!confirm('Permanently delete this API key? It will stop working immediately.')) return;
+    api('DELETE', '/keys/' + encodeURIComponent(fk)).then(function(d) {
+      if (d.error) { toast(d.error, true); return; }
+      toast('Key deleted');
+      loadKeys(); loadUsage();
+    }).catch(function() { toast('Failed to delete key', true); });
+  }
+
+  // Tab switching
+  function switchTab(name) {
+    if (!isAuth) return;
+    var links = document.querySelectorAll('.sidebar-nav a');
+    for (var i = 0; i < links.length; i++) { links[i].classList.remove('active'); if (links[i].getAttribute('data-tab') === name) links[i].classList.add('active'); }
+    var secs = document.querySelectorAll('.main section');
+    for (var j = 0; j < secs.length; j++) { secs[j].classList.remove('active'); }
+    var sec = document.getElementById('tab-' + name);
+    if (sec) sec.classList.add('active');
+    if (name === 'usage') loadUsage();
+    if (name === 'keys') loadKeys();
+    if (name === 'models') loadModels();
+    if (name === 'topup') { loadCredits(); updateCreditBalanceDisplay(); }
+    if (name === 'billing') loadBilling();
+  }
+
+  // Models
+  function loadModels() {
+    api('GET', '/models').then(function(d) {
+      var tbody = document.getElementById('models-table');
+      if (d.error || !d.data || !d.data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Unable to load models</td></tr>'; return; }
+      // Known model metadata (server doesn't return context/notes yet)
+      var meta = {
+        'xael-nano':   { ctx: '8K',  notes: 'Fastest · Lightweight' },
+        'xael-mini':   { ctx: '16K',  notes: 'Balanced · General purpose' },
+        'xael-turbo':  { ctx: '32K', notes: 'Performance · Mid-range' },
+        'xael-think':  { ctx: '16K',  notes: 'Reasoning · Smart' },
+        'xael-thinkXL':{ ctx: '32K', notes: 'Maximum reasoning' },
+        'xael-vision': { ctx: '3K',  notes: 'Testing' }
+      };
+      var rows = [];
+      for (var i = 0; i < d.data.length; i++) {
+        var m = d.data[i];
+        var info = meta[m.id] || { ctx: '—', notes: '' };
+        // Format pricing: {input:0.02, output:0.03} → "$0.02 / $0.03"
+        var priceLabel = '—';
+        if (m.pricing && (m.pricing.input || m.pricing.output)) {
+          priceLabel = '$' + (m.pricing.input||0).toFixed(2) + ' / $' + (m.pricing.output||0).toFixed(2);
+        }
+        rows.push('<tr><td style="font-family:monospace;font-weight:600">' + escHtml(m.id) + '</td><td>' + escHtml(m.label||m.id) + '</td><td>' + info.ctx + '</td><td>' + priceLabel + '</td><td style="font-size:.78rem;color:var(--text2)">' + info.notes + '</td></tr>');
+      }
+      tbody.innerHTML = rows.join('');
+    }).catch(function(){ document.getElementById('models-table').innerHTML = '<tr><td colspan="5" class="empty-row">Error loading models</td></tr>'; });
+  }
+
+  // Billing
+  function loadBilling() {
+    api('GET', '/payments').then(function(ps) {
+      var list = document.getElementById('billing-list');
+      if (ps.error) { list.innerHTML = '<tr><td colspan="5" class="empty-row">Error loading billing</td></tr>'; return; }
+      if (!Array.isArray(ps) || ps.length === 0) { list.innerHTML = '<tr><td colspan="5" class="empty-row">No payments yet</td></tr>'; return; }
+      var rows = [];
+      for (var i = 0; i < ps.length; i++) {
+        var p = ps[i];
+        var statusClass = p.status === 'success' ? 'success' : 'pending';
+        rows.push('<tr><td style="font-family:monospace;font-size:.78rem">' + escHtml(p.invoiceId || '—') + '</td><td><span class="status-badge ' + statusClass + '">' + escHtml(p.status || 'pending') + '</span></td><td>$' + (p.amount || 0).toFixed(2) + '</td><td>' + escHtml(p.method || 'Manual') + '</td><td style="font-size:.8rem;color:var(--text2)">' + (p.created ? p.created.slice(0,19).replace('T',' ') : '—') + '</td></tr>');
+      }
+      list.innerHTML = rows.join('');
+    });
+  }
+
+  // API Credits
+  function updateCreditBalanceDisplay() {
+    var balEl = document.getElementById('credit-balance');
+    if (balEl) balEl.textContent = '$' + (currentBalance || 0).toFixed(2);
+    // Also load spent from usage
+    api('GET', '/usage').then(function(d){
+      var spentEl = document.getElementById('credit-spent');
+      if (spentEl && !d.error) spentEl.textContent = '$' + formatCost(d.cost || 0);
+    }).catch(function(){});
+  }
+
+  function loadCredits() {
+    // Update balance display
+    var balEl = document.getElementById('credit-balance');
+    if (balEl && typeof currentBalance !== 'undefined') {
+      balEl.textContent = '$' + (currentBalance || 0).toFixed(2);
+    }
+    // Load payment history
+    fetch('/v1/payments', { credentials: 'include' }).then(function(r){ return r.json(); }).then(function(payments){
+      var list = document.getElementById('credits-history');
+      if (!list) return;
+      var totalPurchased = 0;
+      if (!payments.length) { list.innerHTML = '<tr><td colspan="3" class="empty-row">No payments yet</td></tr>'; return; }
+      var rows = [];
+      for (var i = payments.length - 1; i >= 0; i--) {
+        var p = payments[i];
+        totalPurchased += (p.amount || 0);
+        var statusClass = p.status === 'approved' ? 'success' : (p.status === 'pending' ? 'pending' : '');
+        var statusLabel = p.status === 'approved' ? 'Approved' : (p.status === 'pending' ? 'Pending' : p.status || 'Pending');
+        rows.push('<tr><td style="font-size:.8rem">' + (p.created ? p.created.slice(0,16).replace('T',' ') : '—') + '</td><td>$' + (p.amount || 0).toFixed(2) + '</td><td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td></tr>');
+      }
+      list.innerHTML = rows.join('');
+      var purEl = document.getElementById('credit-purchased');
+      if (purEl) purEl.textContent = '$' + totalPurchased.toFixed(2);
+    }).catch(function(){});
+  }
+
+  function buildAmountOptions() {
+    var amounts = [5, 10, 25, 50, 100];
+    var html = '';
+    for (var i = 0; i < amounts.length; i++) {
+      var a = amounts[i], sel = a === selectedAmount ? ' selected' : '';
+      html += '<div class="radio-card' + sel + '" data-amt="' + a + '"><strong>$' + a + '</strong></div>';
+    }
+    document.getElementById('amount-options').innerHTML = html;
+    var cards = document.querySelectorAll('#amount-options .radio-card');
+    for (var c = 0; c < cards.length; c++) {
+      cards[c].addEventListener('click', function(){
+        selectedAmount = parseInt(this.getAttribute('data-amt'));
+        document.getElementById('topup-total').innerHTML = 'Total: <strong>$' + selectedAmount + '.00</strong>';
+        var all = document.querySelectorAll('#amount-options .radio-card');
+        for (var k = 0; k < all.length; k++) all[k].classList.remove('selected');
+        this.classList.add('selected');
+      });
+    }
+  }
+
+  // Escaping
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function escAttr(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Event wiring
+  document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+  var loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      doLogin(document.getElementById('login-username').value.trim(), document.getElementById('login-password').value);
+    });
+  }
+
+  var navLinks = document.querySelectorAll('.sidebar-nav a');
+  for (var n = 0; n < navLinks.length; n++) {
+    navLinks[n].addEventListener('click', function(e) { e.preventDefault(); switchTab(this.getAttribute('data-tab')); });
+  }
+
+  document.getElementById('genKeyBtn').addEventListener('click', generateKey);
+
+  document.getElementById('topupBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Recording payment...';
+    fetch('/v1/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ amount: selectedAmount, method: 'cashapp', note: 'Cash App $RafaelHernandez1106' })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) {
+        btn.textContent = '✓ Payment Recorded!';
+        btn.style.background = '#10b981';
+        loadCredits();
+        setTimeout(function(){ btn.textContent = '💳 I Paid — Record Payment'; btn.style.background = ''; btn.disabled = false; }, 3000);
+      } else {
+        btn.textContent = 'Error — try again';
+        btn.disabled = false;
+      }
+    }).catch(function(){
+      btn.textContent = 'Error — try again';
+      btn.disabled = false;
+    });
+  });
+
+  // Chart tabs
+  var chartTabs = document.querySelectorAll('.chart-tab');
+  for (var ct = 0; ct < chartTabs.length; ct++) {
+    chartTabs[ct].addEventListener('click', function() {
+      var all = document.querySelectorAll('.chart-tab');
+      for (var a = 0; a < all.length; a++) all[a].classList.remove('active');
+      this.classList.add('active');
+      loadUsage();
+    });
+  }
+
+  // Time range selector
+  var timeRange = document.getElementById('time-range');
+  if (timeRange) {
+    timeRange.addEventListener('change', function() { loadUsage(); });
+  }
+
+  buildAmountOptions();
+
+  var loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var u = document.getElementById('login-username').value.trim();
+      var p = document.getElementById('login-password').value;
+      if (!u || !p) { document.getElementById('login-error').textContent = 'Enter username and password'; return; }
+      doLogin(u, p);
+    });
+  }
+
+  checkAuthAndLoad();
+  // Periodic auth check — every 30s matching XytroMail session TTL
+  setInterval(function() {
+    if (!isAuth) return;
+    api('GET', '/auth/me').then(function(d) {
+      if (!d || !d.authenticated || d.error) {
+        isAuth = false;
+        document.getElementById('login-page').style.display = 'flex';
+        document.getElementById('dashboard').style.display='none'; document.getElementById('dashboard').classList.remove('visible');
+        if (costChart) { costChart.destroy(); costChart = null; }
+      }
+    }).catch(function() {});
+  }, 30000);
+  window.switchTab = switchTab;
+})();
+</script>
+</body>
+</html>

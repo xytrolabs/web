@@ -1,0 +1,8 @@
+xael-nano : tbd                   : 4k context           : $0.05 / 1m Tokens
+xael-mini : to be determined      : 8k context           : $0.15 / 1m Tokens
+xael-turbo: to be determined      : 16k context          : $0.35 / 1m Tokens
+xael-think: LiquidAI Reasoning <3b: 16k res / 8k context : $0.50 / 1m Tokens
+xael-thinkXL: Qwen 2 R1 Dis - 7.6b P: 32k res / 16k context: $0.75 / 1m Tokens
+xael-vision: tbd                  : 3k                   : needs testing before API release.
+
+7.5% cost when cache is hit!

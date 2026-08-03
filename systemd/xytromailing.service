@@ -1,0 +1,19 @@
+[Unit]
+Description=XytroMailing — Xytro Mail Backend
+After=network.target stalwart.service
+Wants=stalwart.service
+
+[Service]
+Type=simple
+User=raf
+WorkingDirectory=/run/media/raf/Z/PrismTechnologies/XytroMailing
+EnvironmentFile=/run/media/raf/Z/PrismTechnologies/.env
+ExecStartPre=/usr/bin/npm --prefix /run/media/raf/Z/PrismTechnologies/XytroMailing rebuild better-sqlite3
+ExecStart=/usr/bin/node /run/media/raf/Z/PrismTechnologies/XytroMailing/dist/server.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/xytromailing.log
+StandardError=append:/tmp/xytromailing.log
+
+[Install]
+WantedBy=multi-user.target

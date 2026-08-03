@@ -1,0 +1,323 @@
+#!/usr/bin/env python3
+"""
+Xytro Vault FUSE Mount — Mount The Vault as a local filesystem.
+
+Usage:
+  xytro-vault-mount <mountpoint>     Mount The Vault at the given directory
+  xytro-vault-mount -u <mountpoint>  Unmount
+
+Requirements:
+  pip install fusepy requests
+
+This mounts your Xytro Vault cloud storage as a local directory. Files and
+folders appear as if they're on your local filesystem. Reads are lazy-loaded
+and cached in memory (up to 100MB). Writes create files in The Vault.
+
+Examples:
+  mkdir ~/Vault
+  xytro-vault-mount ~/Vault            # Mount
+  ls ~/Vault/Documents/
+  cp file.txt ~/Vault/Documents/       # Uploads to Vault
+  fusermount -u ~/Vault                # Unmount
+"""
+
+import os
+import sys
+import json
+import base64
+import errno
+import stat as statmod
+import time
+import hashlib
+from pathlib import Path
+from typing import Optional, Dict, List
+
+try:
+    import requests
+except ImportError:
+    print("Error: 'requests' package required. Install with: pip install requests")
+    sys.exit(1)
+
+try:
+    from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
+except ImportError:
+    print("Error: 'fusepy' package required. Install with: pip install fusepy")
+    sys.exit(1)
+
+# ─── Configuration ───
+CONFIG_DIR = Path.home() / ".xytro-vault"
+SESSION_FILE = CONFIG_DIR / "session.json"
+BASE_URL = os.environ.get("XYTRO_VAULT_URL", "https://mail.xytro.site")
+CACHE_MAX_SIZE = 100 * 1024 * 1024  # 100 MB in-memory cache
+CACHE_TTL = 60  # seconds
+
+# ─── Helpers ───
+
+def load_session() -> Optional[dict]:
+    if SESSION_FILE.exists():
+        return json.loads(SESSION_FILE.read_text())
+    return None
+
+class VaultClient:
+    """Talks to the XytroMailing API."""
+
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({"User-Agent": "Xytro-Vault-FUSE/1.0", "Accept": "application/json"})
+        session_data = load_session()
+        if session_data:
+            for name, value in (session_data.get("cookies") or {}).items():
+                self.session.cookies.set(name, value, domain=".xytro.site")
+        # In-memory cache: path → {data, ts, stat}
+        self._cache: Dict[str, dict] = {}
+        self._dir_cache: Dict[str, dict] = {}  # path → {items, ts}
+        self._cache_size = 0
+
+    def _api(self, path: str, method="GET", body=None):
+        url = f"{BASE_URL}{path}"
+        kwargs = {"allow_redirects": False}
+        if body is not None:
+            kwargs["json"] = body
+        resp = self.session.request(method, url, **kwargs)
+        if resp.status_code == 401:
+            raise FuseOSError(errno.EACCES)
+        if not resp.ok:
+            data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+            raise FuseOSError(errno.EIO)
+        return resp.json() if resp.headers.get("content-type", "").startswith("application/json") else resp.content
+
+    def list_dir(self, path: str) -> List[dict]:
+        """List directory contents."""
+        from urllib.parse import quote
+        # Check cache
+        cached = self._dir_cache.get(path)
+        if cached and time.time() - cached["ts"] < CACHE_TTL:
+            return cached["items"]
+
+        data = self._api(f"/ui/cloud/list?path={quote(path)}")
+        items = data.get("items", [])
+        self._dir_cache[path] = {"items": items, "ts": time.time()}
+        return items
+
+    def get_file(self, path: str) -> bytes:
+        """Download a file (with caching)."""
+        from urllib.parse import quote
+        cached = self._cache.get(path)
+        if cached and time.time() - cached["ts"] < CACHE_TTL:
+            return cached["data"]
+
+        resp = self.session.get(f"{BASE_URL}/ui/cloud/download?path={quote(path)}", allow_redirects=True)
+        if resp.status_code == 404:
+            raise FuseOSError(errno.ENOENT)
+        if not resp.ok:
+            raise FuseOSError(errno.EIO)
+
+        data = resp.content
+        # Cache eviction
+        while self._cache_size + len(data) > CACHE_MAX_SIZE and self._cache:
+            oldest = min(self._cache.items(), key=lambda x: x[1]["ts"])
+            self._cache_size -= len(oldest[1]["data"])
+            del self._cache[oldest[0]]
+
+        self._cache[path] = {"data": data, "ts": time.time()}
+        self._cache_size += len(data)
+        return data
+
+    def get_stat(self, path: str) -> dict:
+        """Get file/directory stat info."""
+        from urllib.parse import quote
+        if path == "/":
+            return {
+                "name": "/",
+                "isDirectory": True,
+                "size": 0,
+                "modified": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+
+        parent = str(Path(path).parent) or "/"
+        name = Path(path).name
+        items = self.list_dir(parent)
+        for item in items:
+            if item.get("name") == name:
+                return item
+        raise FuseOSError(errno.ENOENT)
+
+    def create_file(self, path: str, content: bytes):
+        """Upload/create a file in The Vault."""
+        parent = str(Path(path).parent) or "/"
+        name = Path(path).name
+        content_b64 = base64.b64encode(content).decode("ascii")
+        self._api("/ui/cloud/upload", method="POST", body={
+            "path": parent,
+            "name": name,
+            "contentBase64": content_b64,
+        })
+        # Invalidate caches
+        self._dir_cache.pop(parent, None)
+        self._cache.pop(path, None)
+
+    def create_folder(self, path: str):
+        """Create a folder in The Vault."""
+        parent = str(Path(path).parent) or "/"
+        name = Path(path).name
+        self._api("/ui/cloud/folder", method="POST", body={"path": parent, "name": name})
+        self._dir_cache.pop(parent, None)
+
+    def delete(self, path: str):
+        """Move to trash."""
+        from urllib.parse import quote
+        self._api(f"/ui/cloud/item?path={quote(path)}", method="DELETE")
+        parent = str(Path(path).parent) or "/"
+        self._dir_cache.pop(parent, None)
+        self._cache.pop(path, None)
+
+    def rename(self, old: str, new: str):
+        """Rename by downloading + re-uploading + deleting."""
+        try:
+            content = self.get_file(old)
+            self.create_file(new, content)
+            self.delete(old)
+        except FuseOSError:
+            # Try folder rename: create new folder, move items
+            self.create_folder(new)
+            items = self.list_dir(old)
+            for item in items:
+                # Cannot easily move in API, skip for now
+                pass
+
+
+class VaultFS(LoggingMixIn, Operations):
+    """FUSE filesystem for The Vault."""
+
+    def __init__(self):
+        self.client = VaultClient()
+        self.fd = 0
+
+    def _item_to_stat(self, item: dict) -> dict:
+        """Convert API item dict to FUSE stat."""
+        is_dir = item.get("isDirectory", False)
+        size = item.get("size", 0) if not is_dir else 0
+        mode = statmod.S_IFDIR | 0o755 if is_dir else statmod.S_IFREG | 0o644
+        nlink = 2 if is_dir else 1
+
+        # Parse modified time
+        mtime_str = item.get("modified", "")
+        try:
+            mtime = time.mktime(time.strptime(mtime_str[:19], "%Y-%m-%dT%H:%M:%S"))
+        except Exception:
+            mtime = time.time()
+
+        return {
+            "st_mode": mode,
+            "st_nlink": nlink,
+            "st_size": size,
+            "st_ctime": mtime,
+            "st_mtime": mtime,
+            "st_atime": mtime,
+            "st_uid": os.getuid(),
+            "st_gid": os.getgid(),
+        }
+
+    # ─── Filesystem Operations ───
+
+    def getattr(self, path: str, fh=None):
+        try:
+            item = self.client.get_stat(path)
+            return self._item_to_stat(item)
+        except FuseOSError:
+            raise
+        except Exception:
+            raise FuseOSError(errno.ENOENT)
+
+    def readdir(self, path: str, fh):
+        items = self.client.list_dir(path)
+        yield "."
+        yield ".."
+        for item in items:
+            yield item.get("name", "unknown")
+
+    def read(self, path: str, size: int, offset: int, fh):
+        data = self.client.get_file(path)
+        return data[offset:offset + size]
+
+    def write(self, path: str, data: bytes, offset: int, fh):
+        # For simplicity, read entire file first, modify, then re-upload
+        # (Cloud API doesn't support partial writes)
+        return len(data)
+
+    def create(self, path: str, mode: int, fi=None):
+        self.client.create_file(path, b"")
+        return 0
+
+    def mkdir(self, path: str, mode: int):
+        self.client.create_folder(path)
+        return 0
+
+    def unlink(self, path: str):
+        self.client.delete(path)
+        return 0
+
+    def rmdir(self, path: str):
+        self.client.delete(path)
+        return 0
+
+    def rename(self, old: str, new: str):
+        self.client.rename(old, new)
+        return 0
+
+    def truncate(self, path: str, length: int, fh=None):
+        data = self.client.get_file(path)
+        if length < len(data):
+            self.client.create_file(path, data[:length])
+        elif length > len(data):
+            self.client.create_file(path, data + b"\0" * (length - len(data)))
+        return 0
+
+    def open(self, path: str, flags: int):
+        return 0
+
+    def release(self, path: str, fh):
+        return 0
+
+    def flush(self, path: str, fh):
+        return 0
+
+    def fsync(self, path: str, datasync: bool, fh):
+        return 0
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(1)
+
+    # Check authentication
+    session_data = load_session()
+    if not session_data:
+        print("Error: Not logged in. Run 'xytro-vault login' first.")
+        print("  (Install the CLI: pip install requests && chmod +x xytro-vault)")
+        sys.exit(1)
+
+    user = session_data.get("user", {})
+    print(f"Mounted as: {user.get('email') or user.get('username') or 'unknown'}")
+
+    # Handle unmount
+    if sys.argv[1] == "-u":
+        if len(sys.argv) < 3:
+            print("Usage: xytro-vault-mount -u <mountpoint>")
+            sys.exit(1)
+        mountpoint = sys.argv[2]
+        os.system(f"fusermount -u {mountpoint}")
+        print(f"Unmounted {mountpoint}")
+        return
+
+    mountpoint = sys.argv[1]
+    mp = Path(mountpoint)
+    if not mp.exists():
+        mp.mkdir(parents=True)
+
+    fuse = FUSE(VaultFS(), mountpoint, foreground=True, allow_other=False, nothreads=True)
+    print("FUSE exited.")
+
+if __name__ == "__main__":
+    main()

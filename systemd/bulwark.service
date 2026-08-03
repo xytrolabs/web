@@ -1,0 +1,18 @@
+[Unit]
+Description=Bulwark Webmail — XytroMail-NG
+After=network.target
+
+[Service]
+Type=simple
+User=raf
+WorkingDirectory=/run/media/raf/Z/PrismTechnologies/XytroMail-NG
+Environment=HOSTNAME=0.0.0.0
+Environment=PORT=3001
+ExecStart=/usr/bin/npx next start
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/bulwark.log
+StandardError=append:/tmp/bulwark.log
+
+[Install]
+WantedBy=multi-user.target

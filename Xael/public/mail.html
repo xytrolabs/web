@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mail — Xytro</title>
+<style>
+:root{--bg:#0a0a0f;--bg2:#111118;--text:#e8e8ed;--text2:#8888a0;--accent:#a855f7;--bd:rgba(255,255,255,0.06);--r:12px;--sidebar:220px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--bd);padding:20px 0;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar a,.sidebar span{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text2);text-decoration:none;font-size:.875rem}
+.sidebar a:hover{color:var(--text)}
+.main{margin-left:var(--sidebar);flex:1;padding:20px 28px;max-width:900px}
+h1{font-size:1.3rem;margin-bottom:16px}
+.msg{display:block;padding:12px;border-bottom:1px solid var(--bd);text-decoration:none;color:var(--text)}
+.msg:hover{background:var(--bg2)}
+.msg.unread{background:rgba(168,85,247,0.05);font-weight:600}
+.loading{padding:40px;text-align:center;color:var(--text2)}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <span style="font-size:1.1rem;font-weight:800;color:var(--text)">Xytro Mail</span>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/mail.html">Inbox</a>
+  <a href="/v1/auth/logout" style="color:#f87171">Sign Out</a>
+</aside>
+<main class="main" id="content"><div class="loading">Loading...</div></main>
+<script>
+(function(){
+  function api(path) {
+    return fetch(path, { credentials: 'include' }).then(r => r.json()).catch(e => ({ error: e.message }));
+  }
+  function showInbox() {
+    api('/api/mail/inbox').then(function(rows) {
+      if (rows.error) { document.getElementById('content').innerHTML = '<div class="loading">' + rows.error + '</div>'; return; }
+      var unread = rows.filter(function(r) { return !r.is_read; }).length;
+      var html = '<h1>Inbox <span style="color:var(--text2);font-size:.9rem;font-weight:400">(' + unread + ' unread)</span></h1>';
+      if (rows.length === 0) { html += '<div class="loading">No messages</div>'; }
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var cls = r.is_read ? 'msg' : 'msg unread';
+        var date = r.received_at ? r.received_at.slice(0, 16) : '';
+        html += '<a class="' + cls + '" href="#" data-id="' + r.id + '">';
+        html += '<div style="display:flex;justify-content:space-between"><span>' + r.sender_email + '</span><span style="color:var(--text2);font-size:.8rem">' + date + '</span></div>';
+        html += '<div>' + (r.subject || '(no subject)') + '</div></a>';
+      }
+      document.getElementById('content').innerHTML = html;
+      var msgs = document.querySelectorAll('.msg');
+      for (var j = 0; j < msgs.length; j++) {
+        msgs[j].addEventListener('click', function(e) {
+          e.preventDefault();
+          showMessage(this.getAttribute('data-id'));
+        });
+      }
+    });
+  }
+  function showMessage(id) {
+    document.getElementById('content').innerHTML = '<div class="loading">Loading...</div>';
+    api('/api/mail/message/' + id).then(function(r) {
+      if (r.error) { document.getElementById('content').innerHTML = '<div class="loading">' + r.error + '</div>'; return; }
+      var html = '<a href="#" onclick="showInbox();return false" style="color:var(--accent);text-decoration:none;font-size:.9rem">Back</a>';
+      html += '<h1 style="margin-top:12px">' + (r.subject || '(no subject)') + '</h1>';
+      html += '<p style="color:var(--text2);margin:8px 0">From: ' + r.sender_email + ' | ' + (r.received_at || '') + '</p>';
+      html += '<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:20px;margin-top:16px;white-space:pre-wrap;line-height:1.6">' + (r.text_body || r.html_body || '(empty)') + '</div>';
+      document.getElementById('content').innerHTML = html;
+    });
+  }
+  window.showInbox = showInbox;
+  showInbox();
+})();
+</script>
+</body>
+</html>

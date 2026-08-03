@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Xytro Vault
+Comment=Mount your Xytro Vault cloud storage as a local drive
+Exec=xytro-vault-desktop
+Icon=folder-remote
+Terminal=false
+Type=Application
+Categories=Network;FileTools;
+StartupNotify=false
+X-GNOME-Autostart-enabled=false

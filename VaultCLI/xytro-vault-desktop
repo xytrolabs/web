@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""
+Xytro Vault Desktop App — Mount The Vault as a drive in your file manager.
+
+Double-click the "Xytro Vault" icon in your app launcher to mount/unmount.
+After mounting, The Vault appears in your file manager sidebar as a local folder.
+
+Requirements: pip install requests fusepy
+"""
+
+import os
+import sys
+import json
+import subprocess
+import threading
+from pathlib import Path
+
+CONFIG_DIR = Path.home() / ".xytro-vault"
+SESSION_FILE = CONFIG_DIR / "session.json"
+MOUNT_DIR = Path.home() / "XytroVault"
+PID_FILE = CONFIG_DIR / "mount.pid"
+
+def load_session():
+    if SESSION_FILE.exists():
+        return json.loads(SESSION_FILE.read_text())
+    return None
+
+def is_mounted():
+    """Check if the FUSE mount is active."""
+    if not MOUNT_DIR.is_mount():
+        return False
+    try:
+        with open("/proc/mounts") as f:
+            return str(MOUNT_DIR) in f.read()
+    except Exception:
+        return False
+
+def mount_vault():
+    """Mount The Vault via FUSE."""
+    session = load_session()
+    if not session:
+        notify("Xytro Vault", "Not logged in. Run 'xytro-vault login' first.", "error")
+        return False
+
+    if is_mounted():
+        notify("Xytro Vault", "Already mounted at " + str(MOUNT_DIR))
+        subprocess.Popen(["xdg-open", str(MOUNT_DIR)])
+        return True
+
+    MOUNT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Find xytro-vault-mount script
+    script_dir = Path(__file__).parent
+    mount_script = script_dir / "xytro-vault-mount"
+
+    if not mount_script.exists():
+        # Try PATH
+        import shutil
+        mount_script = shutil.which("xytro-vault-mount")
+        if not mount_script:
+            notify("Xytro Vault", "Cannot find xytro-vault-mount script", "error")
+            return False
+
+    try:
+        # Start mount in background
+        proc = subprocess.Popen(
+            [sys.executable, str(mount_script), str(MOUNT_DIR)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        PID_FILE.write_text(str(proc.pid))
+
+        # Wait briefly for mount to establish
+        import time
+        time.sleep(3)
+
+        if is_mounted():
+            notify("Xytro Vault", "Mounted at " + str(MOUNT_DIR), "dialog-information")
+            subprocess.Popen(["xdg-open", str(MOUNT_DIR)])
+            return True
+        else:
+            notify("Xytro Vault", "Mount failed. Check 'xytro-vault login' first.", "error")
+            return False
+    except Exception as e:
+        notify("Xytro Vault", f"Mount error: {e}", "error")
+        return False
+
+def unmount_vault():
+    """Unmount The Vault."""
+    if not is_mounted():
+        notify("Xytro Vault", "Not currently mounted.")
+        return True
+
+    try:
+        subprocess.run(["fusermount", "-u", str(MOUNT_DIR)], check=True, timeout=10)
+        notify("Xytro Vault", "Unmounted " + str(MOUNT_DIR), "dialog-information")
+        if PID_FILE.exists():
+            PID_FILE.unlink()
+        return True
+    except subprocess.CalledProcessError:
+        # Force unmount
+        try:
+            subprocess.run(["fusermount", "-uz", str(MOUNT_DIR)], check=True, timeout=10)
+            notify("Xytro Vault", "Force-unmounted " + str(MOUNT_DIR))
+        except Exception:
+            notify("Xytro Vault", "Could not unmount. Try: fusermount -u " + str(MOUNT_DIR), "error")
+        return False
+
+def notify(title, message, icon="dialog-information"):
+    """Send desktop notification."""
+    try:
+        subprocess.run(["notify-send", "-i", icon, title, message], timeout=3)
+    except Exception:
+        pass
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "-u":
+        unmount_vault()
+    else:
+        if is_mounted():
+            # Already mounted — open it or offer to unmount
+            import tkinter as tk
+            from tkinter import messagebox
+            root = tk.Tk()
+            root.withdraw()
+            result = messagebox.askquestion(
+                "Xytro Vault",
+                f"Vault is mounted at {MOUNT_DIR}\n\nOpen folder or unmount?",
+                detail="Click Yes to open, No to unmount."
+            )
+            if result == 'yes':
+                subprocess.Popen(["xdg-open", str(MOUNT_DIR)])
+            else:
+                unmount_vault()
+        else:
+            mount_vault()
+
+if __name__ == "__main__":
+    main()

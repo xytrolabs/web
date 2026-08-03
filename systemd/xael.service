@@ -1,0 +1,20 @@
+[Unit]
+Description=Xael AI API — Valis AI Gateway
+After=network.target ollama.service
+Wants=ollama.service
+
+[Service]
+Type=simple
+User=raf
+WorkingDirectory=/run/media/raf/Z/PrismTechnologies/Xael
+EnvironmentFile=/run/media/raf/Z/PrismTechnologies/.env
+Environment=XAEL_PORT=4005
+Environment=SESSION_SECRET=xael-session-prod-2026-dF4gH9jK1mB6nC8v
+ExecStart=/usr/bin/node /run/media/raf/Z/PrismTechnologies/Xael/server.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/xael.log
+StandardError=append:/tmp/xael.log
+
+[Install]
+WantedBy=multi-user.target

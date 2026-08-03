@@ -1,0 +1,19 @@
+      <a class="card" href="https://nova.xytro.site">
+        <h2 class="name">NOVA</h2>
+        <p class="desc">NOVA is a new chat start-up that plans to rival Discord, Hangouts, and the now discontinued Guilded.gg!</p>
+        <span class="tag">Chat</span>
+      </a>
+
+      <a class="card" href="https://admin.xytro.site">
+        <h2 class="name">Xytro Admin</h2>
+        <p class="desc">Admin controls, service management, and settings.</p>
+        <span class="tag">Admin</span>
+      </a>
+
+
+
+      <a class="card" href="https://indent.xytro.site">
+        <h2 class="name">Aether Language</h2>
+        <p class="desc">Home for your new programming language platform.</p>
+        <span class="tag">New</span>
+      </a>

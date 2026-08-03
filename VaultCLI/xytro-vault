@@ -1,0 +1,371 @@
+#!/usr/bin/env python3
+"""
+Xytro Vault CLI — Linux command-line tool for The Vault cloud storage.
+
+Usage:
+  xytro-vault login                         Log in to your Xytro account
+  xytro-vault whoami                        Show current logged-in user
+  xytro-vault ls [path]                     List files/folders at path
+  xytro-vault upload <local> [remote_path]  Upload a file or folder
+  xytro-vault download <remote> [local]     Download a file
+  xytro-vault mkdir <path>                  Create a folder
+  xytro-vault rm <path>                     Move file/folder to trash
+  xytro-vault share <path>                  Create a public share link
+  xytro-vault sync <local> <remote>         Sync local folder → Vault
+  xytro-vault usage                         Show storage usage
+  xytro-vault logout                        Log out
+
+Examples:
+  xytro-vault login
+  xytro-vault ls /Documents
+  xytro-vault upload ./my-project/ /backups/
+  xytro-vault download /photos/photo.jpg ./downloads/
+  xytro-vault sync ~/Documents/ /Documents/
+"""
+
+import os
+import sys
+import json
+import base64
+import hashlib
+import argparse
+import getpass
+from pathlib import Path
+from urllib.parse import quote
+from typing import Optional
+
+try:
+    import requests
+except ImportError:
+    print("Error: 'requests' package required. Install with: pip install requests")
+    sys.exit(1)
+
+# ─── Configuration ───
+CONFIG_DIR = Path.home() / ".xytro-vault"
+SESSION_FILE = CONFIG_DIR / "session.json"
+BASE_URL = os.environ.get("XYTRO_VAULT_URL", "https://mail.xytro.site")
+VAULT_URL = os.environ.get("XYTRO_VAULT_URL", "https://cloud.xytro.site")
+CHUNK_SIZE = 0x8000  # 32KB chunks for base64 encoding
+
+# ─── Helpers ───
+
+def ensure_config():
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+def load_session() -> Optional[dict]:
+    if SESSION_FILE.exists():
+        return json.loads(SESSION_FILE.read_text())
+    return None
+
+def save_session(cookies: dict, user: dict):
+    ensure_config()
+    SESSION_FILE.write_text(json.dumps({"cookies": cookies, "user": user, "ts": __import__("time").time()}))
+
+def clear_session():
+    if SESSION_FILE.exists():
+        SESSION_FILE.unlink()
+
+def get_session() -> requests.Session:
+    s = requests.Session()
+    session_data = load_session()
+    if session_data:
+        for name, value in (session_data.get("cookies") or {}).items():
+            s.cookies.set(name, value, domain=".xytro.site")
+    s.headers.update({"User-Agent": "Xytro-Vault-CLI/1.0", "Accept": "application/json"})
+    return s
+
+def api(path: str, method="GET", body=None, session=None):
+    """Make an API call to XytroMailing."""
+    if session is None:
+        session = get_session()
+    url = f"{BASE_URL}{path}"
+    kwargs = {"allow_redirects": False}
+    if body is not None:
+        kwargs["json"] = body
+    resp = session.request(method, url, **kwargs)
+    data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+    if resp.status_code == 401:
+        print("Error: Not authenticated. Run 'xytro-vault login' first.")
+        sys.exit(1)
+    if not resp.ok:
+        error = data.get("error", f"HTTP {resp.status_code}")
+        print(f"Error: {error}")
+        sys.exit(1)
+    return data, resp
+
+def format_size(size_bytes: int) -> str:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} PB"
+
+def file_to_base64(filepath: str) -> str:
+    """Read a file and return its base64-encoded content."""
+    with open(filepath, "rb") as f:
+        raw = f.read()
+    return base64.b64encode(raw).decode("ascii")
+
+# ─── Commands ───
+
+def cmd_login(args):
+    """Log in to Xytro account."""
+    print("Xytro Vault — Login")
+    username = input("Username or email: ").strip()
+    password = getpass.getpass("Password: ")
+    if not username or not password:
+        print("Error: Username and password required.")
+        sys.exit(1)
+
+    s = requests.Session()
+    s.headers.update({"User-Agent": "Xytro-Vault-CLI/1.0", "Accept": "application/json"})
+    resp = s.post(f"{BASE_URL}/auth/login", json={"username": username, "password": password})
+
+    if resp.status_code == 429:
+        print("Error: Too many login attempts. Please wait a minute.")
+        sys.exit(1)
+
+    try:
+        data = resp.json()
+    except Exception:
+        print(f"Error: Server returned non-JSON response (HTTP {resp.status_code})")
+        sys.exit(1)
+
+    if not resp.ok or data.get("error"):
+        print(f"Error: {data.get('error', 'Login failed')}")
+        sys.exit(1)
+
+    # Extract cookies
+    cookies = {}
+    for cookie in s.cookies:
+        cookies[cookie.name] = cookie.value
+
+    # Get user info
+    me_resp = s.get(f"{BASE_URL}/auth/me")
+    user = me_resp.json() if me_resp.ok else {"username": username}
+
+    save_session(cookies, user)
+    print(f"✓ Logged in as {user.get('email') or user.get('username') or username}")
+    print(f"  Storage: {data.get('storage', 'N/A')}")
+
+def cmd_whoami(args):
+    """Show current user."""
+    session_data = load_session()
+    if not session_data:
+        print("Not logged in. Run 'xytro-vault login'")
+        sys.exit(1)
+    user = session_data.get("user", {})
+    print(f"Logged in as: {user.get('email') or user.get('username') or 'unknown'}")
+    print(f"Session age: {int(__import__('time').time() - session_data.get('ts', 0))}s ago")
+
+def cmd_ls(args):
+    """List files at a path."""
+    path = args.path or "/"
+    data, _ = api(f"/ui/cloud/list?path={quote(path)}")
+    items = data.get("items", [])
+    if not items:
+        print(f"(empty) — {path}")
+        return
+
+    print(f"\n{path}")
+    print("-" * 60)
+    for item in items:
+        type_char = "📁" if item.get("isDirectory") else "📄"
+        name = item.get("name", "unknown")
+        size = format_size(item.get("size", 0)) if not item.get("isDirectory") else "-"
+        modified = (item.get("modified") or "")[:10]
+        print(f"  {type_char} {name:<30} {size:>10}  {modified}")
+    print("-" * 60)
+    total_dirs = sum(1 for i in items if i.get("isDirectory"))
+    total_files = len(items) - total_dirs
+    print(f"{total_dirs} dirs, {total_files} files")
+
+def cmd_upload(args):
+    """Upload a file or folder."""
+    local = Path(args.local)
+    if not local.exists():
+        print(f"Error: '{local}' not found.")
+        sys.exit(1)
+
+    remote_path = args.remote_path or "/"
+
+    if local.is_file():
+        # Single file upload
+        content_b64 = file_to_base64(str(local))
+        print(f"Uploading {local.name} ({format_size(local.stat().st_size)})...")
+        data, _ = api("/ui/cloud/upload", method="POST", body={
+            "path": remote_path,
+            "name": local.name,
+            "contentBase64": content_b64,
+        })
+        print(f"✓ Uploaded {local.name} ({format_size(data.get('bytes', 0))})")
+
+    elif local.is_dir():
+        # Folder upload: collect all files recursively
+        files_list = []
+        total_size = 0
+        print(f"Scanning {local}...")
+        for fpath in local.rglob("*"):
+            if fpath.is_file():
+                relative = str(fpath.relative_to(local.parent)) if args.remote_path else str(fpath.relative_to(local))
+                # For folder sync, the relative path within the upload is just the subfolder structure
+                rel_parts = str(fpath.relative_to(local)).split(os.sep)
+                subfolder = "/".join(rel_parts[:-1]) if len(rel_parts) > 1 else ""
+                files_list.append({
+                    "name": fpath.name,
+                    "contentBase64": file_to_base64(str(fpath)),
+                    "relativePath": subfolder,
+                })
+                total_size += fpath.stat().st_size
+                print(f"  → {fpath.name} ({format_size(fpath.stat().st_size)})")
+
+        print(f"\nUploading {len(files_list)} files ({format_size(total_size)}) to {remote_path}...")
+
+        # Upload in batches of 50
+        batch_size = 50
+        for i in range(0, len(files_list), batch_size):
+            batch = files_list[i:i + batch_size]
+            data, _ = api("/ui/cloud/upload-folder", method="POST", body={
+                "path": remote_path,
+                "files": batch,
+            })
+            ok_count = data.get("okCount", 0)
+            skip_count = sum(1 for f in data.get("files", []) if f.get("status") == "skipped")
+            print(f"  Batch {i // batch_size + 1}: {ok_count} ok, {skip_count} skipped")
+
+        print(f"✓ Upload complete")
+
+def cmd_download(args):
+    """Download a file from The Vault."""
+    remote = args.remote
+    local = args.local or Path(remote).name
+
+    print(f"Downloading {remote} → {local}...")
+    session = get_session()
+    resp = session.get(f"{BASE_URL}/ui/cloud/download?path={quote(remote)}", allow_redirects=True)
+    if resp.status_code == 404:
+        print(f"Error: File not found: {remote}")
+        sys.exit(1)
+    if not resp.ok:
+        print(f"Error: HTTP {resp.status_code}")
+        sys.exit(1)
+
+    Path(local).parent.mkdir(parents=True, exist_ok=True)
+    with open(local, "wb") as f:
+        f.write(resp.content)
+    print(f"✓ Downloaded to {local} ({format_size(len(resp.content))})")
+
+def cmd_mkdir(args):
+    """Create a folder."""
+    path = args.path
+    parent = str(Path(path).parent) if path != "/" else "/"
+    name = Path(path).name
+    data, _ = api("/ui/cloud/folder", method="POST", body={"path": parent, "name": name})
+    print(f"✓ Created folder: {path}")
+
+def cmd_rm(args):
+    """Move to trash."""
+    path = args.path
+    data, _ = api(f"/ui/cloud/item?path={quote(path)}", method="DELETE")
+    print(f"✓ Moved to trash: {path}")
+
+def cmd_share(args):
+    """Create a public share link."""
+    path = args.path
+    name = Path(path).name
+    data, _ = api("/ui/cloud/share", method="POST", body={"path": path, "filename": name})
+    token = data.get("token", "")
+    if token:
+        print(f"✓ Share link created:")
+        print(f"  https://cloud.xytro.site/cloud/share/{token}")
+
+def cmd_sync(args):
+    """Sync a local folder to The Vault."""
+    # Reuse upload logic for directories
+    cmd_upload(args)
+
+def cmd_usage(args):
+    """Show storage usage."""
+    data, _ = api("/ui/storage/usage")
+    used = data.get("usedBytes", 0)
+    quota = data.get("quotaBytes", 0)
+    pct = (used / quota * 100) if quota > 0 else 0
+    print(f"Storage: {format_size(used)} / {format_size(quota)} ({pct:.1f}%)")
+    bar_width = 30
+    filled = int(bar_width * pct / 100)
+    print(f"[{'█' * filled}{'░' * (bar_width - filled)}]")
+
+def cmd_logout(args):
+    """Log out."""
+    try:
+        session = get_session()
+        session.post(f"{BASE_URL}/auth/logout")
+    except Exception:
+        pass
+    clear_session()
+    print("✓ Logged out.")
+
+# ─── CLI Setup ───
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Xytro Vault CLI — Manage your cloud storage from the terminal",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Run 'xytro-vault login' first to authenticate.",
+    )
+    sub = parser.add_subparsers(dest="command", title="commands")
+
+    sub.add_parser("login", help="Log in to your Xytro account")
+    sub.add_parser("whoami", help="Show current user")
+    sub.add_parser("logout", help="Log out")
+
+    p = sub.add_parser("ls", help="List files")
+    p.add_argument("path", nargs="?", default="/", help="Path to list (default: /)")
+
+    p = sub.add_parser("upload", help="Upload a file or folder")
+    p.add_argument("local", help="Local file or folder path")
+    p.add_argument("remote_path", nargs="?", default="/", help="Remote destination path")
+
+    p = sub.add_parser("download", help="Download a file")
+    p.add_argument("remote", help="Remote file path")
+    p.add_argument("local", nargs="?", help="Local destination (default: current dir)")
+
+    p = sub.add_parser("mkdir", help="Create a folder")
+    p.add_argument("path", help="Folder path to create")
+
+    p = sub.add_parser("rm", help="Move file/folder to trash")
+    p.add_argument("path", help="Path to delete")
+
+    p = sub.add_parser("share", help="Create a public share link")
+    p.add_argument("path", help="File or folder path to share")
+
+    p = sub.add_parser("sync", help="Sync local folder to Vault")
+    p.add_argument("local", help="Local folder")
+    p.add_argument("remote", nargs="?", default="/", help="Remote path")
+
+    sub.add_parser("usage", help="Show storage usage")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(0)
+
+    commands = {
+        "login": cmd_login,
+        "whoami": cmd_whoami,
+        "logout": cmd_logout,
+        "ls": cmd_ls,
+        "upload": cmd_upload,
+        "download": cmd_download,
+        "mkdir": cmd_mkdir,
+        "rm": cmd_rm,
+        "share": cmd_share,
+        "sync": cmd_sync,
+        "usage": cmd_usage,
+    }
+
+    commands[args.command](args)
+
+if __name__ == "__main__":
+    main()

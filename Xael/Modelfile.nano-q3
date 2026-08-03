@@ -1,0 +1,2 @@
+FROM hf.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF:Q3_K_M
+PARAMETER num_ctx 8192

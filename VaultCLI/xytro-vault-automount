@@ -1,0 +1,47 @@
+#!/bin/bash
+# Xytro Vault Auto-Mount — Mount The Vault like an external drive
+# Creates mount at /run/media/$USER/Vault so it appears in file manager sidebar
+# like C: and Z: drives (matching udisks mount convention)
+
+set -e
+
+MOUNTPOINT="/run/media/$USER/Vault"
+CONFIG_DIR="$HOME/.xytro-vault"
+SESSION_FILE="$CONFIG_DIR/session.json"
+
+# Check if already mounted
+if mountpoint -q "$MOUNTPOINT" 2>/dev/null; then
+    exit 0
+fi
+
+# Check for saved session
+if [ ! -f "$SESSION_FILE" ]; then
+    echo "Vault: No session found. Run 'xytro-vault login' first." >&2
+    exit 1
+fi
+
+# Check if FUSE mount script exists
+if ! command -v xytro-vault-mount &>/dev/null; then
+    echo "Vault: xytro-vault-mount not found. Run install script." >&2
+    exit 1
+fi
+
+# Create mountpoint (needs sudo if /run/media/$USER doesn't exist)
+if [ ! -d "/run/media/$USER" ]; then
+    sudo mkdir -p "/run/media/$USER"
+    sudo chown "$USER:$USER" "/run/media/$USER"
+fi
+mkdir -p "$MOUNTPOINT"
+
+# Mount in background
+nohup xytro-vault-mount "$MOUNTPOINT" > /tmp/xytro-vault-mount.log 2>&1 &
+
+# Wait for mount
+for i in $(seq 1 10); do
+    sleep 1
+    if mountpoint -q "$MOUNTPOINT" 2>/dev/null; then
+        echo "Vault mounted at $MOUNTPOINT"
+        exit 0
+    fi
+done
+echo "Vault: Mount may still be initializing. Check /tmp/xytro-vault-mount.log" >&2
