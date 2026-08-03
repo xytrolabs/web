@@ -1,0 +1,8 @@
+// Hello World — Zen Zor
+fun main int {
+    say "Hello from Zor v0.5.0 — Zen Edition!"
+    give 0
+}
+
+//Rust Equivalent:
+

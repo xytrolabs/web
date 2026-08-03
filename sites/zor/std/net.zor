@@ -1,0 +1,61 @@
+// Zor Networking Library — TCP/UDP/HTTP via libc
+// Uses extern FFI with popen() for curl; direct sockets for TCP
+
+extern "C" {
+    fun popen(cmd int, mode int) -> int;
+    fun fgets(buf int, size int, stream int) -> int;
+    fun pclose(stream int) -> int;
+    fun socket(domain int, kind int, proto int) -> int;
+    fun connect(fd int, addr int, len int) -> int;
+    fun send(fd int, buf int, len int, flags int) -> int;
+    fun recv(fd int, buf int, len int, flags int) -> int;
+    fun close(fd int) -> int;
+}
+
+/// Fetch URL content via HTTP GET using curl via popen
+fun http_get(url string) string {
+    var cmd string = "curl -sL \"" + url + "\""
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// Fetch URL content and save to file
+fun download(url string, path string) string {
+    var cmd string = "curl -sL \"" + url + "\" -o \"" + path + "\""
+    var fp int = popen(cmd, "r")
+    if fp != 0 { pclose(fp) }
+    give: path
+}
+
+/// Simple HTTP POST with JSON body
+fun http_post(url string, body string) string {
+    var cmd string = "curl -sL -X POST -d '" + body + "' \"" + url + "\""
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// Check if a port is open on a host
+fun port_open(host string, port int) bool {
+    var result string = http_get("http://" + host + ":" + port)
+    give: result != ""
+}

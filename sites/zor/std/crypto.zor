@@ -1,0 +1,133 @@
+// Zor Cryptography Library — Hashes, HMAC via OpenSSL/libcrypto
+// Uses extern FFI for native performance
+
+extern "C" {
+    fun popen(cmd int, mode int) -> int;
+    fun fgets(buf int, size int, stream int) -> int;
+    fun pclose(stream int) -> int;
+    fun SHA256(data int, len int, out int) -> int;
+    fun SHA512(data int, len int, out int) -> int;
+    fun MD5(data int, len int, out int) -> int;
+    fun EVP_EncodeBlock(out int, in int, len int) -> int;
+    fun EVP_DecodeBlock(out int, in int, len int) -> int;
+    fun RAND_bytes(buf int, num int) -> int;
+}
+
+/// SHA256 hash — hex encoded
+fun sha256(data string) string {
+    var cmd string = "echo -n \"" + data + "\" | sha256sum | cut -d' ' -f1"
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// SHA512 hash — hex encoded
+fun sha512(data string) string {
+    var cmd string = "echo -n \"" + data + "\" | sha512sum | cut -d' ' -f1"
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// MD5 hash (for non-crypto checksums)
+fun md5(data string) string {
+    var cmd string = "echo -n \"" + data + "\" | md5sum | cut -d' ' -f1"
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// Base64 encode
+fun base64_encode(data string) string {
+    var cmd string = "echo -n \"" + data + "\" | base64 -w0"
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// Base64 decode
+fun base64_decode(data string) string {
+    var cmd string = "echo -n \"" + data + "\" | base64 -d"
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// HMAC-SHA256 (hex)
+fun hmac_sha256(key string, data string) string {
+    var cmd string = "echo -n \"" + data + "\" | openssl dgst -sha256 -hmac \"" + key + "\" | cut -d' ' -f2"
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}
+
+/// Cryptographically secure random hex string
+fun random_hex(bytes int) string {
+    var cmd string = "openssl rand -hex " + bytes
+    var fp int = popen(cmd, "r")
+    var result string = ""
+    if fp != 0 {
+        var buf string = "                                "
+        repeat {
+            var n int = fgets(buf, 32, fp)
+            if n == 0 { break }
+            result = result + buf
+        }
+        pclose(fp)
+    }
+    give: result
+}

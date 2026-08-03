@@ -1,0 +1,12 @@
+// OS Kernel — VGA text mode (no_std)
+fun kernel_main int {
+    var vga int = 753664
+    var ptr int = vga
+    unsafe {
+        ptr[0] = 90
+        ptr[1] = 79
+        ptr[2] = 82
+    }
+    repeat {}
+    give 0
+}

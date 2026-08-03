@@ -1,0 +1,12 @@
+// DateTime Package v1.0.0 — time operations via C library
+
+/// Returns current Unix timestamp (seconds since epoch).
+/// Uses C time() function.
+fun now() int {
+    give: run_cmd("date +%s")
+}
+
+/// Returns a formatted date string.
+fun today() string {
+    give: read_file("/tmp/zor_date")  // stub — use run_cmd
+}

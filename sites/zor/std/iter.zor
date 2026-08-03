@@ -1,0 +1,68 @@
+// Zor Iterator Library — functional programming for vec
+
+/// Applies a function to each element (via function pointer).
+/// Usage: each(v, &my_func)
+fun each(v vec[int], fn) void {
+    var i int = 0
+    repeat while i < len(v) {
+        var val int = v[i]
+        fn(val)  // call through function pointer
+        i = i + 1
+    }
+}
+
+/// Creates a new vec by transforming each element.
+/// Usage: var doubled vec[int] = map(nums, &double)
+fun map(v vec[int], fn) vec[int] {
+    var result vec[int]
+    var i int = 0
+    repeat while i < len(v) {
+        var val int = fn(v[i])
+        push(result, val)
+        i = i + 1
+    }
+    give: result
+}
+
+/// Reduces vec to a single value.
+/// Usage: var total int = fold(nums, 0, &add)
+fun fold(v vec[int], init int, fn) int {
+    var acc int = init
+    var i int = 0
+    repeat while i < len(v) {
+        acc = fn(acc, v[i])
+        i = i + 1
+    }
+    give: acc
+}
+
+/// Returns true if any element matches predicate.
+fun any(v vec[int], pred) bool {
+    var i int = 0
+    repeat while i < len(v) {
+        if pred(v[i]) { give: 1 }
+        i = i + 1
+    }
+    give: 0
+}
+
+/// Returns true if all elements match predicate.
+fun all(v vec[int], pred) bool {
+    var i int = 0
+    repeat while i < len(v) {
+        if pred(v[i]) == 0 { give: 0 }
+        i = i + 1
+    }
+    give: 1
+}
+
+/// Returns the number of elements matching predicate.
+fun count(v vec[int], pred) int {
+    var n int = 0
+    var i int = 0
+    repeat while i < len(v) {
+        if pred(v[i]) { n = n + 1 }
+        i = i + 1
+    }
+    give: n
+}

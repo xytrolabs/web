@@ -1,0 +1,18 @@
+// Regex Package v1.0.0 — pattern matching via grep
+
+/// Returns true if text matches the given regex pattern.
+fun matches(text string, pattern string) int {
+    write_file("/tmp/zor_re_in", text)
+    var cmd string = "grep -q '" + pattern + "' /tmp/zor_re_in"
+    var rc int = run_cmd(cmd)
+    give: 1 - rc  // 0 = match found
+}
+
+/// Replaces all matches of pattern with replacement.
+fun replace(text string, pattern string, replacement string) string {
+    write_file("/tmp/zor_re_in", text)
+    var cmd string = "sed 's/" + pattern + "/" + replacement + "/g' /tmp/zor_re_in > /tmp/zor_re_out"
+    run_cmd(cmd)
+    var result string = read_file("/tmp/zor_re_out")
+    give: result
+}

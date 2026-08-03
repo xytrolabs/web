@@ -1,0 +1,6 @@
+[package]
+name = "zor"
+version = "0.5.0"
+edition = "2021"
+description = "Zor — A clean, simple language that transpiles to Rust. Write Rust without the noise."
+

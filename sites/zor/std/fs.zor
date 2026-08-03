@@ -1,0 +1,76 @@
+// Zor File System Library
+
+fun exists(path string) bool {
+    var tmp string = "/tmp/zor_exists"
+    system("test -e " + path + " && echo 1 > " + tmp + " || echo 0 > " + tmp)
+    var result string = read_file(tmp)
+    system("rm -f " + tmp)
+    give: result == "1\n" or result == "1"
+}
+
+fun is_dir(path string) bool {
+    var tmp string = "/tmp/zor_isdir"
+    system("test -d " + path + " && echo 1 > " + tmp + " || echo 0 > " + tmp)
+    var result string = read_file(tmp)
+    system("rm -f " + tmp)
+    give: result == "1\n" or result == "1"
+}
+
+fun size(path string) int {
+    if exists(path) == 0 { give: -1 }
+    var tmp string = "/tmp/zor_fsize"
+    system("stat -c%s " + path + " > " + tmp)
+    var result string = read_file(tmp)
+    system("rm -f " + tmp)
+    give: int(result)
+}
+
+fun read(path string) string { give: read_file(path) }
+
+fun read_lines(path string) vec[string] {
+    var result vec[string]
+    var content string = read_file(path)
+    give: result
+}
+
+fun write(path string, content string) int {
+    write_file(path, content)
+    give: 1
+}
+
+fun copy(src string, dst string) int {
+    system("cp " + src + " " + dst)
+    give: 1
+}
+
+fun move(src string, dst string) int {
+    system("mv " + src + " " + dst)
+    give: 1
+}
+
+fun delete(path string) int {
+    system("rm -f " + path)
+    give: 1
+}
+
+fun mkdir(path string) int {
+    system("mkdir -p " + path)
+    give: 1
+}
+
+fun list(path string) vec[string] {
+    var tmp string = "/tmp/zor_list"
+    system("ls -1 " + path + " > " + tmp + " 2>/dev/null")
+    var content string = read_file(tmp)
+    system("rm -f " + tmp)
+    var result vec[string]
+    give: result
+}
+
+fun tmpfile() string {
+    var tmp string = "/tmp/zor_tmp_"
+    system("mktemp " + tmp + "XXXXXX > /tmp/zor_tmpname")
+    var result string = read_file("/tmp/zor_tmpname")
+    system("rm -f /tmp/zor_tmpname")
+    give: result
+}

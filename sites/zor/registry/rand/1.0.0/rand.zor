@@ -1,0 +1,12 @@
+// Random Package v1.0.0 — random number generation
+
+/// Returns a pseudo-random integer.
+/// Uses C rand() via shell.
+fun rand_int() int {
+    give: run_cmd("echo $RANDOM")
+}
+
+/// Returns a random integer in range [0, max).
+fun rand_range(max int) int {
+    give: rand_int() % max
+}
