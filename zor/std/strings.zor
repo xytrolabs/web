@@ -1,0 +1,10 @@
+// Zor Standard Library — Strings
+
+// length
+fun length(s string) int = len(s)
+
+// concatenate
+fun concat(a string, b string) string = a + b
+
+// compare
+fun equals(a string, b string) bool = 0  // 0 means equal in strcmp

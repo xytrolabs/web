@@ -1,0 +1,19 @@
+# Xytro Labs Web — .gitignore
+
+# Local dev serves
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Do not commit secrets or local files
+.env
+.env.*
+*.local
+*.log

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WAASH -- What An Amazing SHell | Xytro Labs</title>
+<meta name="description" content="A Linux shell combining FISH interactivity with BASH power. Autosuggestions, heredocs, Indent scripting — beautiful and powerful."/>
+<meta property="og:title" content="WAASH -- What An Amazing SHell"/>
+<meta property="og:description" content="FISH interactivity × BASH power. A shell that's amazing."/>
+<meta property="og:image" content="https://xytro.site/xytro.png"/>
+<meta property="og:url" content="https://xytro.site/waash"/>
+<meta property="og:type" content="website"/>
+<meta name="theme-color" content="#fdba05"/>
+<link rel="icon" type="image/png" href="/xytro.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a12;--bg2:#0d0d18;--card:rgba(255,255,255,0.03);--card-h:rgba(255,255,255,0.06);--text:#f4f1ea;--text2:#a9a49a;--text3:#6b675f;--go:#fdba05;--go-l:#ffd75e;--go-d:#c79302;--go-g:rgba(253,186,5,0.15);--go-b:rgba(253,186,5,0.08);--bd:rgba(255,255,255,0.06);--r:16px}
+html{scroll-behavior:smooth}
+body{font-family:Inter,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.g{position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(120px);opacity:0.07}
+.g1{width:800px;height:800px;top:-400px;right:-200px;background:var(--go)}
+.g2{width:500px;height:500px;bottom:-150px;left:-100px;background:var(--go-l)}
+.go{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,0.008) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.008) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.w{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(10,10,18,0.75);border-bottom:1px solid var(--bd)}
+nav .n{max-width:1120px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.nl{font-weight:800;font-size:1.15rem;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:12px}
+.nl img{height:36px;width:auto;border-radius:8px;background:rgba(253,186,5,0.14);padding:4px;box-shadow:0 0 16px var(--go-g)}
+.nlk{display:flex;gap:28px;align-items:center}
+.nlk a{color:var(--text2);text-decoration:none;font-size:0.88rem;font-weight:500;transition:color 0.2s}
+.nlk a:hover{color:var(--go-l)}
+.ph{text-align:center;padding:80px 0 40px}
+.ph .hl{height:72px;width:auto;margin-bottom:20px;filter:drop-shadow(0 0 24px var(--go-g))}
+.ph h1{font-size:clamp(2.5rem,6vw,4rem);font-weight:900;letter-spacing:-0.03em;background:linear-gradient(135deg,#fff 20%,var(--go-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+.ph p{color:var(--text2);font-size:1.05rem;max-width:580px;margin:0 auto}
+.hc{margin:0 auto 60px;max-width:680px;background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden;transition:border-color 0.3s}
+.hc:hover{border-color:var(--go)}
+.hc .b{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--bd)}
+.hc .b .d{width:10px;height:10px;border-radius:50%;opacity:0.5}
+.hc .b .r{background:#ef4444}.hc .b .y{background:#eab308}.hc .b .g{background:#22c55e}
+.hc .b s{color:var(--text3);font-size:0.75rem;font-weight:600;margin-left:8px}
+.hc pre{padding:20px 24px;overflow-x:auto;font-family:JetBrains Mono,monospace;font-size:0.82rem;line-height:1.7;color:var(--text)}
+.hc pre .kw{color:#fdba05}.hc pre .fn{color:#82aaff}.hc pre .s{color:#c3e88d}.hc pre .c{color:#546e7a}.hc pre .t{color:#ffcb6b}.hc pre .p{color:#9aa0a6}
+.gs{text-align:center;margin-bottom:64px}
+.gs p{color:var(--text2);margin-bottom:16px}
+.icd{display:inline-block;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px 24px;font-family:JetBrains Mono,monospace;font-size:0.85rem;color:var(--go-l);transition:border-color 0.3s}
+.icd:hover{border-color:var(--go)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:999px;font-weight:600;font-size:0.9rem;text-decoration:none;transition:all 0.25s;margin:0 6px}
+.bp{background:linear-gradient(135deg,var(--go-d),var(--go));color:#1a1300}
+.bp:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--go-g)}
+.bs{background:var(--card);color:var(--text);border:1px solid var(--bd)}
+.bs:hover{border-color:var(--go);color:var(--go-l);transform:translateY(-2px)}
+.sl{text-align:center;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--go-l);margin-bottom:8px}
+.fs{padding:0 0 80px}
+.fs h2{text-align:center;font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:40px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.fe{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:28px;transition:all 0.25s}
+.fe:hover{border-color:var(--go);background:var(--go-b);transform:translateY(-3px)}
+.fe h3{font-size:1.1rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.fe h3 .i{flex-shrink:0;font-size:1.3rem}
+.fe p{color:var(--text2);font-size:0.88rem;line-height:1.6}
+.ft{border-top:1px solid var(--bd);padding:40px 0;text-align:center}
+.ft p{color:var(--text3);font-size:0.85rem}
+.ft a{color:var(--text2);text-decoration:none}
+.ft a:hover{color:var(--go-l)}
+.code2{margin:0 auto 60px;max-width:680px}
+.code2 h2{text-align:center;font-size:1.4rem;font-weight:800;margin-bottom:24px}
+@media(max-width:640px){.ph{padding:60px 0 30px}.hc{margin:0 0 40px}}
+</style>
+</head>
+<body>
+<div class="g g1"></div><div class="g g2"></div><div class="go"></div>
+<nav><div class="n"><a href="/" class="nl"><img src="/xytro.png" alt="Xytro Labs"/> Xytro Labs</a><div class="nlk"><a href="https://indent.xytro.site">Indent</a><a href="https://zor.xytro.site">Zor</a><a href="https://mail.xytro.site">Mail</a></div></div></nav>
+<div class="w">
+<section class="ph"><img src="/xytro.png" alt="" class="hl"/><h1>WAASH</h1><p>What An Amazing SHell — the interactivity of FISH, the power of BASH, and scripts written in Indent.</p></section>
+
+<div class="hc"><div class="b"><span class="d r"></span><span class="d y"></span><span class="d g"></span><s>waash</s></div><pre><span class="p">╭─</span> <span class="kw">raf@raf-cachy</span> <span class="t">~/Desktop/WAASH</span> <span class="s">(main)</span>  <span class="c">⚙1.2 │ 01:44:00</span>
+<span class="p">%</span> cargo build --release
+   <span class="c">Compiling waash v0.1.0</span>
+    <span class="s">Finished</span> release in 1.6s
+<span class="p">╭─</span> <span class="kw">raf@raf-cachy</span> <span class="t">~/Desktop/WAASH</span> <span class="s">(main)</span>  <span class="c">~1.6s │ ⚙1.0 │ 01:44:02</span>
+<span class="p">%</span> <span class="fn">echo</span> <span class="s">"hello from WAASH"</span>
+hello from WAASH
+<span class="p">%</span></pre></div>
+
+<div class="gs"><p>Runs on any Linux distro. No root needed.</p><a href="https://xytro.site/waash/install.sh" class="btn bp">&#11015; Install WAASH</a><a href="https://xytro.site/waash/docs/" class="btn bs">Read the Docs &rarr;</a></div>
+
+<section class="fs"><div class="sl">Features</div><h2>Why WAASH?</h2><div class="fg">
+<div class="fe"><h3><span class="i">&#128064;</span> FISH Autosuggestions</h3><p>Ghost-text predictions as you type — accept with the arrow key. Predicts from history, paths, and common idioms.</p></div>
+<div class="fe"><h3><span class="i">&#127921;</span> Syntax Highlighting</h3><p>Commands, options, strings, variables, and operators colorized live as you type.</p></div>
+<div class="fe"><h3><span class="i">&#129518;</span> BASH Heredocs</h3><p>Full support: <code>&lt;&lt;EOF</code>, <code>&lt;&lt;-EOF</code>, <code>&lt;&lt;'EOF'</code>, and herestrings <code>&lt;&lt;&lt;</code>.</p></div>
+<div class="fe"><h3><span class="i">&#128200;</span> Indent Scripting</h3><p>Write scripts in Indent — readable, simple, powerful. Bare commands work directly in scripts.</p></div>
+<div class="fe"><h3><span class="i">&#9201;</span> Command Timing</h3><p>See how long each command took, right in the prompt — just like FISH.</p></div>
+<div class="fe"><h3><span class="i">&#127968;</span> Cross-Distro</h3><p>Static Rust binary. One installer works on Debian, Fedora, Arch, openSUSE, and more.</p></div>
+</div></section>
+
+<div class="code2"><h2>Scripts that make sense</h2><div class="hc"><div class="b"><span class="d r"></span><span class="d y"></span><span class="d g"></span><s>build.waash</s></div><pre><span class="c">#! Build script — readable, not arcane</span>
+<span class="fn">header</span> <span class="s">"Building WAASH"</span>
+<span class="fn">cargo</span> build --release
+<span class="fn">echo</span> <span class="s">"Done!"</span></pre></div></div>
+</div>
+<footer class="ft"><div class="w"><p>&copy; 2026 <a href="/">Xytro Labs</a>. WAASH is open source under the MIT License. Built in Rust with <a href="https://indent.xytro.site">Indent</a>.</p></div></footer>
+</body>
+</html>

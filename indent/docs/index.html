@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Indent Docs</title>
+<meta name="theme-color" content="#8b5cf6"/>
+<link rel="icon" type="image/png" href="/xytro.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#06060e;color:#e8e6f0;font-family:Inter,sans-serif;display:flex;height:100vh;overflow:hidden}
+.side{width:280px;background:#0b0b1a;border-right:1px solid rgba(255,255,255,0.06);padding:20px 0;overflow-y:auto;flex-shrink:0}
+.side .brand{display:flex;align-items:center;gap:10px;padding:0 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:14px;font-weight:800;font-size:1.05rem}
+.side .brand img{height:28px;border-radius:6px}
+.side .grp{padding:8px 20px 2px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#5e5a78}
+.side a{display:block;padding:7px 20px;color:#9a94b8;text-decoration:none;font-size:0.86rem;border-left:3px solid transparent;transition:all .15s}
+.side a:hover{color:#fff;background:rgba(139,92,246,0.06)}
+.side a.active{color:#a78bfa;border-left-color:#8b5cf6;background:rgba(139,92,246,0.08)}
+.main{flex:1;overflow-y:auto;padding:40px 48px 80px}
+.main .inner{max-width:760px;margin:0 auto}
+.main h1{font-size:2rem;font-weight:800;margin:0 0 20px;letter-spacing:-0.02em}
+.main h2{font-size:1.4rem;font-weight:700;margin:34px 0 12px;letter-spacing:-0.01em;color:#a78bfa}
+.main h3{font-size:1.1rem;font-weight:700;margin:24px 0 8px}
+.main p{line-height:1.75;margin:10px 0;color:#c8c5d8}
+.main ul,.main ol{margin:10px 0 10px 24px;line-height:1.75;color:#c8c5d8}
+.main li{margin:4px 0}
+.main code{background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:0.85em;color:#c792ea}
+.main pre{background:#0b0b1a;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px 20px;overflow-x:auto;margin:14px 0}
+.main pre code{background:none;color:#e8e6f0;font-size:0.85rem;line-height:1.6;padding:0}
+.main table{border-collapse:collapse;margin:14px 0;width:100%;font-size:0.9rem}
+.main th,.main td{border:1px solid rgba(255,255,255,0.1);padding:8px 12px;text-align:left}
+.main th{background:rgba(139,92,246,0.1);color:#a78bfa}
+.main blockquote{border-left:3px solid #8b5cf6;padding:8px 16px;color:#9a94b8;margin:14px 0;background:rgba(139,92,246,0.05);border-radius:0 8px 8px 0}
+.main a{color:#a78bfa;text-decoration:none}
+.main a:hover{text-decoration:underline}
+.main hr{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:24px 0}
+.bar{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#8b5cf6,transparent);opacity:.5}
+@media(max-width:720px){.side{display:none}.main{padding:24px}}
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<aside class="side">
+  <div class="brand"><img src="/xytro.png" alt=""/> Indent Docs</div>
+  <div class="grp">Guide</div>
+  <a href="#" data-doc="INDENT_GUIDE">Indent Guide</a>
+  <a href="#" data-doc="quick-reference">Quick Reference</a>
+  <a href="#" data-doc="builtins-reference">Builtins Reference</a>
+  <a href="#" data-doc="packages-reference">Packages Reference</a>
+  <div class="grp">Packages</div>
+  <a href="#" data-doc="ai-package">AI (ai)</a>
+  <a href="#" data-doc="ingame-package">InGame (ingame)</a>
+  <a href="#" data-doc="agame-package">Game Helpers (agame)</a>
+  <a href="#" data-doc="discord-package">Discord (discord)</a>
+  <div class="grp">Tutorial</div>
+  <a href="#" data-doc="learn/01-quickstart">01 · Quickstart</a>
+  <a href="#" data-doc="learn/02-functions-and-types">02 · Functions &amp; Types</a>
+  <a href="#" data-doc="learn/03-control-flow">03 · Control Flow</a>
+  <a href="#" data-doc="learn/04-lists-and-dictionaries">04 · Lists &amp; Dictionaries</a>
+  <a href="#" data-doc="learn/05-strings-and-builtins">05 · Strings &amp; Builtins</a>
+  <a href="#" data-doc="learn/06-error-handling">06 · Error Handling</a>
+  <a href="#" data-doc="learn/07-file-io-and-os">07 · File I/O &amp; OS</a>
+  <a href="#" data-doc="learn/08-advanced-functions">08 · Advanced Functions</a>
+  <a href="#" data-doc="learn/09-data-and-json">09 · Data &amp; JSON</a>
+  <a href="#" data-doc="learn/10-web-development">10 · Web Development</a>
+  <a href="#" data-doc="learn/11-classes">11 · Classes</a>
+  <a href="/" style="margin-top:18px;color:#a78bfa">← Back to Indent</a>
+</aside>
+<main class="main"><div class="inner" id="content"><p>Loading docs…</p></div></main>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script>
+const DOCS = [
+  "INDENT_GUIDE","quick-reference","builtins-reference","packages-reference",
+  "ai-package","ingame-package","agame-package","discord-package",
+  "learn/01-quickstart","learn/02-functions-and-types","learn/03-control-flow",
+  "learn/04-lists-and-dictionaries","learn/05-strings-and-builtins",
+  "learn/06-error-handling","learn/07-file-io-and-os","learn/08-advanced-functions",
+  "learn/09-data-and-json","learn/10-web-development","learn/11-classes"
+];
+let current = "INDENT_GUIDE";
+
+function activate(name) {
+  document.querySelectorAll('.side a[data-doc]').forEach(a => {
+    a.classList.toggle('active', a.dataset.doc === name);
+  });
+}
+
+async function load(name) {
+  if (!DOCS.includes(name)) name = "INDENT_GUIDE";
+  current = name;
+  activate(name);
+  const el = document.getElementById('content');
+  el.innerHTML = '<p>Loading…</p>';
+  try {
+    const res = await fetch(name + ".md");
+    if (!res.ok) throw new Error("not found");
+    const md = await res.text();
+    el.innerHTML = marked.parse(md);
+    el.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.endsWith('.md')) a.setAttribute('href', '#' + href);
+    });
+  } catch (e) {
+    el.innerHTML = "<h1>Not found</h1><p>This doc isn't available on the site yet.</p>";
+  }
+}
+
+document.querySelectorAll('.side a[data-doc]').forEach(a => {
+  a.addEventListener('click', ev => { ev.preventDefault(); load(a.dataset.doc); });
+});
+
+// Hash navigation: #ai-package.md / #ai-package → load that doc.
+// Lets in-content links (rewritten to href="#...") work too.
+function hashDoc() {
+  let h = location.hash.replace(/^#/, '').replace(/\.md$/, '');
+  if (h) load(h);
+}
+window.addEventListener('hashchange', hashDoc);
+document.getElementById('content').addEventListener('click', ev => {
+  const a = ev.target.closest('a');
+  if (!a) return;
+  const href = a.getAttribute('href') || '';
+  if (href.startsWith('#') && href.length > 1) {
+    ev.preventDefault();
+    const name = href.slice(1).replace(/\.md$/, '');
+    if (DOCS.includes(name)) { location.hash = href.slice(1); load(name); }
+  }
+});
+if (location.hash) hashDoc();
+load(current);
+</script>
+</body>
+</html>

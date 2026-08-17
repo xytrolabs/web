@@ -1,0 +1,35 @@
+# NOTICE
+
+## Xytro Labs Web
+
+© 2026 Xytro Labs. All rights reserved.
+
+This repository contains the public websites and documentation of Xytro Labs.
+The repository as a whole is licensed under the GNU General Public License,
+version 2 (GPL-2.0), a copy of which is in [`LICENSE`](LICENSE).
+
+Individual subprojects carry their own, more permissive licenses, as
+documented in their respective README and header files:
+
+| Subproject | License | Details |
+|------------|---------|---------|
+| `waash/` | MIT | WAASH shell — "open source under the MIT License" |
+| `indent/` | MIT | Indent programming language — "MIT © Xytro Labs 2026" |
+| `zor/` | MIT | Zor transpiler — "MIT" |
+| `nova/` | — | NOVA client SDK (Python) and site |
+| `balance/`, `account/`, root landing | GPL-2.0 | Covered by the repository license |
+
+## Third-party open-source acknowledgements
+
+Xytro Labs thanks the open-source community. Third-party components used by the
+Xytro Labs products promoted on these pages include:
+
+- **aiaio** by [abhishekkrthakur](https://github.com/abhishekkrthakur) — the
+  Valis AI chat interface is derived from it (Apache-2.0)
+- **OrioSearch / SearXNG** — self-hosted web search used by Valis AI
+- **Express (Node.js)** — core web framework used by Xytro Labs services
+
+Third-party components are used in accordance with their respective licenses.
+
+If you believe any attribution is missing or incorrect, please contact
+<legal@xytro.site>.

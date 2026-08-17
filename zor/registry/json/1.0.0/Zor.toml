@@ -1,0 +1,4 @@
+[package]
+name = "json"
+version = "1.0.0"
+description = "Simple JSON string building utilities"

@@ -1,0 +1,74 @@
+// Zor Kernel — VGA text mode
+
+fun kernel_main int {
+    var vga int = 753664
+
+    // Line 0: "ZOR KERNEL"
+    var p int = vga
+    unsafe { p[0] = 90 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 79 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 82 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 32 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 75 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 69 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 82 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 78 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 69 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 76 | 1792 }
+
+    // Line 1: "Built in Zor"
+    p = vga + 160
+    unsafe { p[0] = 66 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 117 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 105 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 108 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 116 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 32 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 105 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 110 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 32 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 90 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 111 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 114 | 1792 }
+
+    // Line 2: "QEMU OK!"
+    p = vga + 320
+    unsafe { p[0] = 81 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 69 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 77 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 85 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 32 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 79 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 75 | 1792 }
+    p = p + 2
+    unsafe { p[0] = 33 | 1792 }
+
+    repeat {}
+    give 0
+}

@@ -1,0 +1,16 @@
+// Zor PCI Scanner — hardware driver
+// Build: ZOR_NO_STD=1 zor build pci.zor
+
+fun pci_read(bus int, slot int, func int, offset int) int {
+    var addr int = 2147483648 + (bus * 65536) + (slot * 2048) + (func * 256) + offset
+    var port int = 3320
+    var data int = 3324
+    unsafe { port[0] = addr }
+    unsafe { give: data[0] }
+}
+
+fun kernel_main() int {
+    var vendor int = pci_read(0, 0, 0, 0)
+    repeat {}
+    give: 0
+}
