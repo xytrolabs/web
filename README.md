@@ -18,6 +18,7 @@ documentation sites for each product.
 | `nova/` | NOVA collaboration + Python SDK | `nova.xytro.site` |
 | `balance/` | Balance / credits top-up | `balance.xytro.site` |
 | `api-docs.html` | Valis AI API documentation | `valisapis.xytro.site/api-docs.html` |
+| `api-explorer.html` | Interactive Valis API explorer (Swagger UI) | `valisapis.xytro.site/api-explorer.html` |
 | `valis-api/openapi.json` | Valis AI API OpenAPI 3.0 spec | `ai.xytro.site/openapi.json` |
 
 ## Overview
