@@ -1,0 +1,219 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Valis AI API",
+    "description": "Private, local-first, OpenAI-compatible AI API by Xytro Labs. Cheap, fast, and cache-heavy: repeated queries are served instantly and free from cache. Fully customizable — use your own system prompts (`prompt` / named presets via `/v1/prompts`), structured JSON output, and function/tool calling. All inference runs on Xytro hardware — no third-party model providers.",
+    "version": "1.1.0",
+    "contact": { "name": "Xytro Labs" }
+  },
+  "servers": [
+    { "url": "https://valisapis.xytro.site", "description": "Production" },
+    { "url": "http://localhost:4005", "description": "Local" }
+  ],
+  "security": [ { "bearerAuth": [] } ],
+  "paths": {
+    "/v1/chat/completions": {
+      "post": {
+        "summary": "Generate a chat completion (OpenAI-compatible)",
+        "description": "Sends messages to a Valis model. Streaming is supported. Responses may be served from cache (`cached: true`), including near-duplicate reuse via **semantic caching** (`semantic: true` + `similarity`), at reduced cost. Rate limit: 60 req/min per key. Supports custom system prompts (`prompt`), JSON mode (`response_format`), and function/tool calling (`tools`).",
+        "operationId": "createChatCompletion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["messages"],
+                "properties": {
+                  "model": { "type": "string", "enum": ["xael-nano", "xael-mini", "xael-turbo", "xael-think", "xael-thinkXL", "xael-vision"], "default": "xael-nano" },
+                  "messages": { "type": "array", "items": { "$ref": "#/components/schemas/Message" } },
+                  "stream": { "type": "boolean", "default": false },
+                  "temperature": { "type": "number" },
+                  "prompt": { "description": "Custom system prompt. A saved preset name (see /v1/prompts), inline text, or {content}. Overrides any system message.",
+                    "oneOf": [ { "type": "string" }, { "type": "object", "properties": { "content": { "type": "string" } } } ] },
+                  "response_format": { "description": "Force JSON output.",
+                    "type": "object", "properties": { "type": { "type": "string", "enum": ["json_object", "json"] } } },
+                  "tools": { "description": "Function/tool definitions (OpenAI-compatible).",
+                    "type": "array", "items": { "type": "object" } },
+                  "tool_choice": { "description": "Force a specific tool.",
+                    "oneOf": [ { "type": "string", "enum": ["auto", "none"] }, { "type": "object" } ] },
+                  "rag": { "description": "Attach a knowledge base (see /v1/rag/kbs). Retrieved excerpts are added to the system prompt with citations; sources are returned as `rag.sources`.",
+                    "type": "object", "properties": { "kb": { "type": "string" } } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful completion (may include `cached`/`semantic`/`similarity`, `fallback`, `injection`, or `tool_calls`)" },
+          "400": { "description": "Bad request (missing messages)" },
+          "401": { "description": "Invalid or missing API key" },
+          "402": { "description": "Insufficient balance" },
+          "429": { "description": "Rate limited" },
+          "503": { "description": "AI engine unavailable" }
+        }
+      }
+    },
+    "/v1/embeddings": {
+      "post": {
+        "summary": "Generate vector embeddings (OpenAI-compatible)",
+        "operationId": "createEmbedding",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["input"],
+                "properties": {
+                  "model": { "type": "string", "enum": ["xael-embed"], "default": "xael-embed" },
+                  "input": { "description": "Text or array of texts to embed.",
+                    "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Embedding list" } }
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "summary": "List available models (chat + embedding)",
+        "operationId": "listModels",
+        "responses": { "200": { "description": "Model list" } }
+      }
+    },
+    "/v1/usage": {
+      "get": {
+        "summary": "Get your usage stats (requests, tokens, cost, cache ratio)",
+        "operationId": "getUsage",
+        "responses": { "200": { "description": "Usage statistics" } }
+      }
+    },
+    "/v1/keys": {
+      "get": {
+        "summary": "List your API keys",
+        "operationId": "listKeys",
+        "responses": { "200": { "description": "Key list" } }
+      },
+      "post": {
+        "summary": "Create an API key",
+        "operationId": "createKey",
+        "responses": { "200": { "description": "New key" } }
+      }
+    },
+    "/v1/prompts": {
+      "get": {
+        "summary": "List your custom prompt presets",
+        "operationId": "listPrompts",
+        "responses": { "200": { "description": "Prompt preset list" } }
+      },
+      "post": {
+        "summary": "Create or update a custom prompt preset (name + system-prompt content)",
+        "operationId": "savePrompt",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "content"],
+                "properties": {
+                  "name": { "type": "string", "maxLength": 64 },
+                  "content": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Saved" } }
+      }
+    },
+    "/v1/prompts/{name}": {
+      "delete": {
+        "summary": "Delete a custom prompt preset",
+        "operationId": "deletePrompt",
+        "parameters": [ { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/v1/logs": {
+      "get": {
+        "summary": "Your recent request log (last 20 requests)",
+        "operationId": "getLogs",
+        "responses": { "200": { "description": "Recent request entries" } }
+      }
+    },
+    "/v1/rag/kbs": {
+      "get": { "summary": "List your knowledge bases", "operationId": "listKbs", "responses": { "200": { "description": "Knowledge base list" } } },
+      "post": {
+        "summary": "Create a knowledge base", "operationId": "createKb",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Created" } }
+      }
+    },
+    "/v1/rag/kbs/{id}": {
+      "delete": { "summary": "Delete a knowledge base", "operationId": "deleteKb",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/v1/rag/kbs/{id}/documents": {
+      "post": {
+        "summary": "Add documents to a knowledge base (plain text; auto-chunked + embedded)", "operationId": "addDocuments",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "text": { "type": "string" }, "documents": { "type": "array", "items": { "type": "object", "properties": { "text": { "type": "string" }, "id": { "type": "string" } } } } } } } } },
+        "responses": { "200": { "description": "Ingested" } }
+      }
+    },
+    "/v1/rag/query": {
+      "post": {
+        "summary": "Query a knowledge base (retrieval + generated answer with citations)", "operationId": "ragQuery",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["kb", "query"], "properties": { "kb": { "type": "string" }, "query": { "type": "string" }, "model": { "type": "string", "default": "xael-turbo" } } } } } },
+        "responses": { "200": { "description": "Answer + sources" } }
+      }
+    },
+    "/v1/metrics": {
+      "get": {
+        "summary": "Prometheus-format aggregate metrics (no auth, no per-user data)",
+        "operationId": "getMetrics",
+        "security": [],
+        "responses": { "200": { "description": "Metrics in Prometheus text format" } }
+      }
+    },
+    "/v1/pricing": {
+      "get": {
+        "summary": "Per-model token pricing",
+        "operationId": "getPricing",
+        "responses": { "200": { "description": "Pricing map" } }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "health",
+        "security": [],
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Your API key, e.g. `Authorization: Bearer valis_...`"
+      }
+    },
+    "schemas": {
+      "Message": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": { "type": "string", "enum": ["system", "user", "assistant"] },
+          "content": { "type": "string" }
+        }
+      }
+    }
+  }
+}
